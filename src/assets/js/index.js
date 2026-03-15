@@ -29,7 +29,7 @@ class Splash {
 
     async startAnimation() {
         let splashes = [
-            { "message": "PokeArena Launcher", "Creador": "Phase Studios" },
+            { "message": "Luxfiro Studios", "Creador": "ImNotRuso" },
         ];
         let splash = splashes[Math.floor(Math.random() * splashes.length)];
         this.splashMessage.textContent = splash.message;
