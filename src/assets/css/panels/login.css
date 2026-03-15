@@ -1,0 +1,415 @@
+.login .container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.login-tabs {
+  position: absolute;
+  width: min(100%, 780px);
+  text-align: center;
+  display: none;
+}
+
+/* =========================================================
+   HOME
+========================================================= */
+
+.login-home {
+  background: none;
+  padding: 0;
+  min-width: unset;
+}
+
+.login-home-header {
+  margin-bottom: 26px;
+}
+
+.login-kicker-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.login-kicker-line {
+  width: 22px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #dff5ff, #72c8ff);
+  box-shadow: 0 0 10px rgba(114, 200, 255, 0.25);
+}
+
+.login-kicker {
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(225, 244, 255, 0.72);
+}
+
+.login-title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #eef8ff;
+}
+
+.login-subtitle {
+  margin: 12px 0 0;
+  font-size: 1rem;
+  color: rgba(225, 244, 255, 0.62);
+}
+
+.login-home-cards {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* =========================================================
+   TARJETAS LOGIN HOME
+========================================================= */
+
+.login-card {
+  width: min(100%, 260px);
+  min-height: 220px;
+  padding: 24px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(138, 210, 255, 0.14);
+  background: linear-gradient(180deg, rgba(12, 25, 44, 0.78), rgba(8, 18, 32, 0.82));
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.02),
+    0 18px 34px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  cursor: pointer;
+  transition:
+    transform .22s ease,
+    border-color .22s ease,
+    box-shadow .22s ease,
+    background .22s ease;
+}
+
+.login-card:hover {
+  transform: translateY(-4px);
+}
+
+.login-card span {
+  font-size: 1.18rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.login-card small {
+  font-size: 0.88rem;
+  color: rgba(225, 244, 255, 0.58);
+}
+
+.login-card-icon {
+  width: 86px;
+  height: 86px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.login-card-icon svg {
+  width: 42px;
+  height: 42px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.login-card:hover .login-card-icon {
+  transform: translateY(-3px) scale(1.04);
+}
+
+/* Premium */
+.connect-button-online {
+  background: linear-gradient(180deg, rgba(20, 31, 28, 0.72), rgba(10, 18, 20, 0.84));
+}
+
+.connect-button-online .login-card-icon {
+  background: linear-gradient(180deg, rgba(255, 221, 87, 0.16), rgba(255, 191, 0, 0.10));
+  border: 1px solid rgba(255, 215, 0, 0.26);
+  color: #ffd54d;
+  box-shadow: 0 0 24px rgba(255, 215, 0, 0.08);
+}
+
+.connect-button-online:hover {
+  border-color: rgba(255, 215, 0, 0.28);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.26),
+    0 0 24px rgba(255, 215, 0, 0.08);
+}
+
+/* Offline */
+.connect-button-offline {
+  background: linear-gradient(180deg, rgba(12, 23, 40, 0.78), rgba(8, 17, 31, 0.84));
+}
+
+.connect-button-offline .login-card-icon {
+  background: linear-gradient(180deg, rgba(114, 200, 255, 0.16), rgba(85, 182, 246, 0.08));
+  border: 1px solid rgba(114, 200, 255, 0.24);
+  color: #8fd7ff;
+  box-shadow: 0 0 24px rgba(114, 200, 255, 0.08);
+}
+
+.connect-button-offline:hover {
+  border-color: rgba(114, 200, 255, 0.28);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.26),
+    0 0 24px rgba(114, 200, 255, 0.08);
+}
+
+/* =========================================================
+   PANEL GENÉRICO LOGIN
+========================================================= */
+
+.login-offline,
+.login-AZauth,
+.login-AZauth-A2F {
+  display: none;
+}
+
+.login-panel {
+  width: min(100%, 520px);
+  margin: 0 auto;
+  padding: 28px 26px 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(138, 210, 255, 0.14);
+  background: linear-gradient(180deg, rgba(10, 20, 38, 0.84), rgba(6, 14, 29, 0.88));
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.02),
+    0 20px 42px rgba(0,0,0,0.28);
+  animation: fadePanelIn .3s ease;
+}
+
+@keyframes fadePanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-panel-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-panel-icon svg {
+  width: 34px;
+  height: 34px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.premium-panel-icon {
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.16), rgba(255, 191, 0, 0.10));
+  border: 1px solid rgba(255, 215, 0, 0.26);
+  color: #ffd54d;
+}
+
+.offline-panel-icon,
+.code-panel-icon {
+  background: linear-gradient(180deg, rgba(114, 200, 255, 0.16), rgba(85, 182, 246, 0.08));
+  border: 1px solid rgba(114, 200, 255, 0.24);
+  color: #8fd7ff;
+}
+
+.login-text {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #edf8ff;
+  margin-bottom: 18px;
+}
+
+.input-login {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+/* =========================================================
+   INPUTS
+========================================================= */
+
+.input-login .email,
+.input-login .password,
+.A2F {
+  width: min(100%, 360px);
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(138, 210, 255, 0.14);
+  background: rgba(125, 201, 255, 0.04);
+  color: #eef8ff;
+  font: inherit;
+  transition:
+    border-color .22s ease,
+    box-shadow .22s ease,
+    background .22s ease;
+}
+
+.input-login .email::placeholder,
+.input-login .password::placeholder,
+.A2F::placeholder {
+  color: rgba(225, 244, 255, 0.42);
+}
+
+.input-login .email:focus,
+.input-login .password:focus,
+.A2F:focus {
+  outline: none;
+  border-color: rgba(148, 219, 255, 0.32);
+  box-shadow: 0 0 0 3px rgba(114, 200, 255, 0.08);
+  background: rgba(125, 201, 255, 0.07);
+}
+
+/* =========================================================
+   BOTONES
+========================================================= */
+
+.login-options {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.connect,
+.cancel {
+  min-width: 220px;
+  height: 46px;
+  padding: 0 22px;
+  border-radius: 14px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform .22s ease,
+    background .22s ease,
+    border-color .22s ease,
+    color .22s ease,
+    box-shadow .22s ease;
+}
+
+.connect {
+  border: 1px solid rgba(138, 210, 255, 0.18);
+  background: linear-gradient(180deg, rgba(120, 202, 255, 0.16), rgba(65, 145, 212, 0.08));
+  color: #eef8ff;
+}
+
+.connect:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(180deg, rgba(120, 202, 255, 0.22), rgba(65, 145, 212, 0.12));
+  border-color: rgba(148, 219, 255, 0.28);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.18);
+}
+
+.cancel {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255,255,255,0.04);
+  color: rgba(225, 244, 255, 0.78);
+}
+
+.cancel:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.16);
+}
+
+.cancel-home {
+  margin-top: 18px;
+}
+
+/* =========================================================
+   ANIMACIONES
+========================================================= */
+
+.login-home .login-card {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: fadeInHome 0.45s forwards;
+}
+
+@keyframes fadeInHome {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-home .connect-button-online {
+  animation-delay: 0.08s;
+}
+
+.login-home .connect-button-offline {
+  animation-delay: 0.18s;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 768px) {
+  .login-tabs {
+    width: 100%;
+  }
+
+  .login-home-cards {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .login-card {
+    width: min(100%, 320px);
+    min-height: 190px;
+  }
+
+  .login-panel {
+    padding: 24px 18px 20px;
+  }
+
+  .connect,
+  .cancel {
+    min-width: min(100%, 260px);
+  }
+
+  .input-login .email,
+  .input-login .password,
+  .A2F {
+    width: min(100%, 320px);
+  }
+}

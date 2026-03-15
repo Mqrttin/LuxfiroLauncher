@@ -1,0 +1,123 @@
+<div class="instances">
+
+    <!-- SIDEBAR -->
+    <aside class="instances-sidebar">
+        <div class="sidebar-top">
+            <button class="studio-logo-btn" id="back-home" data-tooltip="Volver al inicio">
+                <div class="studio-logo-frame">
+                    <img src="./assets/images/loguito.png" alt="Studio Logo" class="studio-logo-img">
+                </div>
+            </button>
+        </div>
+
+        <div class="sidebar-nav">
+            <button class="nav-icon-btn" id="nav-home" data-tooltip="Inicio">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 11.5 12 5l8 6.5M7 10.5V19h10v-8.5"></path>
+                </svg>
+            </button>
+
+            <button class="nav-icon-btn active" id="nav-instances" data-tooltip="Instancias">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="6" height="6" rx="1.5"></rect>
+                    <rect x="14" y="4" width="6" height="6" rx="1.5"></rect>
+                    <rect x="4" y="14" width="6" height="6" rx="1.5"></rect>
+                    <rect x="14" y="14" width="6" height="6" rx="1.5"></rect>
+                </svg>
+            </button>
+
+            <button class="nav-icon-btn" id="nav-settings" data-tooltip="Configuración">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 8.5A3.5 3.5 0 1 0 12 15.5A3.5 3.5 0 1 0 12 8.5Z"></path>
+                    <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 0 1-4 0v-.2a1 1 0 0 0-.7-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 0 1-2.8 0 2 2 0 0 1 0-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 0 1 0-4h.2a1 1 0 0 0 .9-.7 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l.1.1a1 1 0 0 0 1.1.2 1 1 0 0 0 .6-.9V4a2 2 0 0 1 4 0v.2a1 1 0 0 0 .7.9 1 1 0 0 0 1.1-.2l.1-.1a2 2 0 0 1 2.8 0 2 2 0 0 1 0 2.8l-.1.1a1 1 0 0 0-.2 1.1 1 1 0 0 0 .9.6H20a2 2 0 0 1 0 4h-.2a1 1 0 0 0-.9.7Z"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="sidebar-bottom">
+            <button class="nav-icon-btn nav-back-btn" id="sidebar-back-home" data-tooltip="Volver">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 18 9 12l6-6"></path>
+                    <path d="M9 12h10"></path>
+                </svg>
+            </button>
+        </div>
+    </aside>
+
+    <!-- SHELL -->
+    <section class="instances-shell">
+
+        <!-- TOPBAR -->
+        <header class="instances-topbar">
+            <div class="instances-topbar-left">
+                <div class="instances-topbar-title-wrap">
+                    <div class="instances-topbar-kicker">Panel de selección</div>
+                    <h1 class="instances-topbar-title">Instancias</h1>
+                </div>
+            </div>
+
+            <div class="instances-topbar-right">
+                <div class="instances-topbar-note">
+                    Selecciona una instancia para volver al inicio con ella activa
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="instances-main">
+            <section class="instances-hero">
+                <div class="instances-hero-inner">
+
+                    <div class="instances-hero-head">
+                        <div class="instances-kicker-row">
+                            <span class="instances-kicker-line"></span>
+                            <span class="instances-kicker">SELECCIÓN DE INSTANCIAS</span>
+                        </div>
+
+                        <div class="instances-title-wrap">
+                            <div class="instances-title">ELIGE TU INSTANCIA</div>
+                            <div class="instances-subtitle">Luxfiro Studio</div>
+                        </div>
+
+                        <p class="instances-description">
+                            Escoge la instancia que quieres usar. Al seleccionarla, quedará guardada y volverás al panel principal.
+                        </p>
+                    </div>
+
+                    <div class="instances-content">
+                        <div class="instances-loading" id="instances-loading">
+                            <div class="instances-loading-card">
+                                <div class="instances-spinner"></div>
+                                <div class="instances-loading-text">Cargando instancias...</div>
+                            </div>
+                        </div>
+
+                        <div class="instances-empty" id="instances-empty">
+                            <div class="instances-empty-card">
+                                <div class="instances-empty-title">No hay instancias disponibles</div>
+                                <div class="instances-empty-text">
+                                    No se pudieron cargar las instancias desde el webhost.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="instances-rows-wrap content-scroll" id="instances-rows"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- BOTTOMBAR -->
+        <footer class="instances-bottombar">
+            <div class="instances-bottombar-left">
+                <span class="bottom-meta-text">Luxfiro Studio</span>
+                <span class="bottom-separator"></span>
+                <span class="bottom-meta-text">Selector de instancias</span>
+                <span class="bottom-separator"></span>
+                <span class="bottom-meta-text">Created by ImNotRuso</span>
+            </div>
+        </footer>
+    </section>
+</div>
+
+<script src="assets/js/instances.js"></script>

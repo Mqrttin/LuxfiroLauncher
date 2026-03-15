@@ -1,0 +1,259 @@
+<div class="settings">
+
+    <!-- SIDEBAR -->
+    <aside class="settings-sidebar">
+        <div class="sidebar-top">
+            <button class="studio-logo-btn" id="settings-logo-home" data-tooltip="Inicio">
+                <div class="studio-logo-frame">
+                    <img src="./assets/images/loguito.png" alt="Studio Logo" class="studio-logo-img">
+                </div>
+            </button>
+        </div>
+
+        <div class="sidebar-nav">
+            <button class="nav-icon-btn" id="nav-home" data-tooltip="Inicio">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 11.5 12 5l8 6.5M7 10.5V19h10v-8.5"></path>
+                </svg>
+            </button>
+
+            <button class="nav-icon-btn" id="nav-instances" data-tooltip="Instancias">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="6" height="6" rx="1.5"></rect>
+                    <rect x="14" y="4" width="6" height="6" rx="1.5"></rect>
+                    <rect x="4" y="14" width="6" height="6" rx="1.5"></rect>
+                    <rect x="14" y="14" width="6" height="6" rx="1.5"></rect>
+                </svg>
+            </button>
+
+            <button class="nav-icon-btn active" id="nav-settings" data-tooltip="Configuración">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 8.5A3.5 3.5 0 1 0 12 15.5A3.5 3.5 0 1 0 12 8.5Z"></path>
+                    <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 0 1-4 0v-.2a1 1 0 0 0-.7-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 0 1-2.8 0 2 2 0 0 1 0-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 0 1 0-4h.2a1 1 0 0 0 .9-.7 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l.1.1a1 1 0 0 0 1.1.2 1 1 0 0 0 .6-.9V4a2 2 0 0 1 4 0v.2a1 1 0 0 0 .7.9 1 1 0 0 0 1.1-.2l.1-.1a2 2 0 0 1 2.8 0 2 2 0 0 1 0 2.8l-.1.1a1 1 0 0 0-.2 1.1 1 1 0 0 0 .9.6H20a2 2 0 0 1 0 4h-.2a1 1 0 0 0-.9.7Z"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="sidebar-bottom">
+            <button class="nav-icon-btn nav-back-btn" id="settings-back-home" data-tooltip="Volver">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 18 9 12l6-6"></path>
+                    <path d="M9 12h10"></path>
+                </svg>
+            </button>
+        </div>
+    </aside>
+
+    <!-- SHELL -->
+    <section class="settings-shell">
+
+        <!-- TOPBAR -->
+        <header class="settings-topbar">
+            <div class="settings-topbar-left">
+                <div class="settings-topbar-title-wrap">
+                    <div class="settings-topbar-kicker">Panel de configuración</div>
+                    <h1 class="settings-topbar-title">Settings</h1>
+                </div>
+            </div>
+
+            <div class="settings-topbar-right">
+                <div class="settings-topbar-note">
+                    Ajusta cuentas, RAM, resolución y launcher
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="settings-main">
+            <section class="settings-hero">
+                <div class="settings-hero-inner">
+
+                    <div class="settings-hero-head">
+                        <div class="settings-kicker-row">
+                            <span class="settings-kicker-line"></span>
+                            <span class="settings-kicker">CONFIGURACIÓN DEL LAUNCHER</span>
+                        </div>
+
+                        <div class="settings-title-wrap">
+                            <div class="settings-title">AJUSTES</div>
+                            <div class="settings-subtitle">Luxfiro Studio</div>
+                        </div>
+
+                        <p class="settings-description">
+                            Gestiona tus cuentas, memoria, resolución del juego y opciones generales del launcher.
+                        </p>
+                    </div>
+
+                    <div class="container">
+
+                        <!-- NAVEGACIÓN -->
+                        <aside class="settings-nav-panel">
+                            <div class="nav-box">
+                                <button class="nav-settings-btn active-settings-BTN" id="account">Cuentas</button>
+                                <button class="nav-settings-btn" id="java">RAM</button>
+                                <button class="nav-settings-btn" id="resolution">Minecraft</button>
+                                <button class="nav-settings-btn" id="launcher">Launcher</button>
+                                <button class="nav-settings-btn" id="credits">Créditos</button>
+                            </div>
+                        </aside>
+
+                        <!-- CONTENIDO -->
+                        <section class="settings-content-panel">
+
+                            <!-- CUENTAS -->
+                            <div class="settings-tab active-container-settings" id="account-tab">
+                                <div class="settings-section-card">
+                                    <div class="settings-section-head">
+                                        <div class="settings-section-title">Cuentas</div>
+                                        <div class="settings-section-subtitle">Selecciona, agrega o elimina perfiles</div>
+                                    </div>
+
+                                    <div class="accounts-list content-scroll">
+                                        <button class="account add-account-card" id="add" type="button">
+                                            <div class="add-profile">
+                                                <div class="icon-account-add">+</div>
+                                            </div>
+                                            <div class="add-text-profile">Añadir una nueva cuenta</div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- RAM -->
+                            <div class="settings-tab" id="java-tab">
+                                <div class="settings-section-card">
+                                    <div class="settings-section-head">
+                                        <div class="settings-section-title">Configuración de RAM</div>
+                                        <div class="settings-section-subtitle">Define la memoria mínima y máxima para Minecraft</div>
+                                    </div>
+
+                                    <div class="settings-form-block">
+                                        <div class="setting-text">
+                                            Ajusta la memoria RAM que utilizará Minecraft al iniciar. Para una experiencia fluida normalmente se recomienda usar entre <b>4 GB</b> y <b>6 GB</b>.
+                                        </div>
+
+                                        <div class="settings-elements settings-dual-layout">
+                                            <div class="memory-panel">
+                                                <div class="memory-panel-title">Memoria asignada</div>
+
+                                                <div class="memory-slider" min="0.5" max="8" step="0.5">
+                                                    <div class="slider-touch-left">
+                                                        <span value="0 GB"></span>
+                                                    </div>
+
+                                                    <div class="slider-touch-right">
+                                                        <span value="0 GB"></span>
+                                                    </div>
+
+                                                    <div class="slider-line">
+                                                        <span></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="ram-info-block">
+                                                <b>Tienes <span id="total-ram">0 GB</span> de RAM.</b><br>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- RESOLUCIÓN -->
+                            <div class="settings-tab" id="resolution-tab">
+                                <div class="settings-section-card">
+                                    <div class="settings-section-head">
+                                        <div class="settings-section-title">Minecraft</div>
+                                        <div class="settings-section-subtitle">Ajusta la resolución de la ventana del juego</div>
+                                    </div>
+
+                                    <div class="settings-form-block">
+                                        <div class="setting-text">
+                                            Personaliza la resolución del juego según tu pantalla o tus preferencias de rendimiento. La resolución predeterminada es <b>854 × 480</b>.
+                                        </div>
+
+                                        <div class="settings-form-grid">
+                                            <label class="settings-input-group">
+                                                <span class="settings-input-label">Ancho</span>
+                                                <input type="number" class="settings-input width-size input-resolution" min="320" step="1" placeholder="Ancho">
+                                            </label>
+
+                                            <label class="settings-input-group">
+                                                <span class="settings-input-label">Alto</span>
+                                                <input type="number" class="settings-input height-size input-resolution" min="240" step="1" placeholder="Alto">
+                                            </label>
+                                        </div>
+
+                                        <div class="settings-actions-row">
+                                            <button class="settings-action-btn size-reset size-btn" type="button">Restablecer</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- LAUNCHER -->
+                            <div class="settings-tab" id="launcher-tab">
+                                <div class="settings-section-card">
+                                    <div class="settings-section-head">
+                                        <div class="settings-section-title">Launcher</div>
+                                        <div class="settings-section-subtitle">Opciones generales del descargador</div>
+                                    </div>
+
+                                    <div class="settings-form-block">
+                                        <div class="setting-text">
+                                            Esta opción define la cantidad máxima de archivos que el launcher puede descargar simultáneamente.
+                                        </div>
+
+                                        <div class="settings-form-grid settings-form-grid-single">
+                                            <label class="settings-input-group">
+                                                <span class="settings-input-label">Descargas simultáneas</span>
+                                                <div class="launcher-input-row">
+                                                    <input type="number" class="settings-input max-files input-max-files" min="1" step="1">
+                                                    <p>Archivos</p>
+                                                </div>
+                                            </label>
+                                        </div>
+
+                                        <div class="settings-actions-row">
+                                            <button class="settings-action-btn max-files-reset max-files-btn" type="button">Restablecer</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- REDES -->
+                            <div class="settings-tab" id="credits-tab">
+                                <div class="settings-section-card">
+                                    <div class="settings-section-head">
+                                        <div class="settings-section-title">Créditos</div>
+                                        <div class="settings-section-subtitle">Información del launcher</div>
+                                    </div>
+
+                                    <div class="settings-credits-block">
+                                        <div class="credit-line">Luxfiro Studio Launcher</div>
+                                        <div class="credit-line">Este launcher fue creado de forma gratuita por</div>
+                                        <div class="credit-line" style="color: blueviolet;">ImNotRuso</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </section>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- BOTTOMBAR -->
+        <footer class="settings-bottombar">
+            <div class="settings-bottombar-left">
+                <span class="bottom-meta-text">Luxfiro Studio</span>
+                <span class="bottom-separator"></span>
+                <span class="bottom-meta-text">Panel de configuración</span>
+                <span class="bottom-separator"></span>
+                <span class="bottom-meta-text">Created by ImNotRuso</span>
+            </div>
+        </footer>
+    </section>
+</div>
+
+<script src="assets/js/settings.js"></script>

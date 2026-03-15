@@ -1,0 +1,155 @@
+<div class="home">
+
+    <!-- BLOQUE OCULTO DE COMPATIBILIDAD PARA utils.js / setStatus() -->
+    <div class="home-status-compat" aria-hidden="true">
+        <img class="server-status-icon" src="assets/images/icon.png" alt="Instance Icon">
+        <div class="server-status-name">Minecraft</div>
+        <div class="server-status-text">Cargando...</div>
+        <div class="status-player-count">
+            <div class="player-count">0</div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="home-sidebar">
+        <div class="sidebar-top">
+            <button class="studio-logo-btn" id="studio-logo" data-tooltip="Launcher">
+                <div class="studio-logo-frame">
+                    <img src="./assets/images/loguito.png" alt="Studio Logo" class="studio-logo-img">
+                </div>
+            </button>
+        </div>
+
+        <div class="sidebar-nav">
+            <button class="nav-icon-btn active" id="nav-home" data-tooltip="Inicio">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 11.5 12 5l8 6.5M7 10.5V19h10v-8.5"></path>
+                </svg>
+            </button>
+
+            <button class="nav-icon-btn" id="nav-instances" data-tooltip="Instancias">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="6" height="6" rx="1.5"></rect>
+                    <rect x="14" y="4" width="6" height="6" rx="1.5"></rect>
+                    <rect x="4" y="14" width="6" height="6" rx="1.5"></rect>
+                    <rect x="14" y="14" width="6" height="6" rx="1.5"></rect>
+                </svg>
+            </button>
+
+            <button class="nav-icon-btn settings-btn" id="nav-settings" data-tooltip="Configuración">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 8.5A3.5 3.5 0 1 0 12 15.5A3.5 3.5 0 1 0 12 8.5Z"></path>
+                    <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 0 1-4 0v-.2a1 1 0 0 0-.7-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 0 1-2.8 0 2 2 0 0 1 0-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 0 1 0-4h.2a1 1 0 0 0 .9-.7 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l.1.1a1 1 0 0 0 1.1.2 1 1 0 0 0 .6-.9V4a2 2 0 0 1 4 0v.2a1 1 0 0 0 .7.9 1 1 0 0 0 1.1-.2l.1-.1a2 2 0 0 1 2.8 0 2 2 0 0 1 0 2.8l-.1.1a1 1 0 0 0-.2 1.1 1 1 0 0 0 .9.6H20a2 2 0 0 1 0 4h-.2a1 1 0 0 0-.9.7Z"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="sidebar-bottom">
+            <button class="nav-icon-btn nav-exit-btn" id="nav-exit" data-tooltip="Salir">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 16.5 19.5 12 15 7.5"></path>
+                    <path d="M19 12H10"></path>
+                    <path d="M12 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"></path>
+                </svg>
+            </button>
+        </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <section class="home-shell">
+
+        <!-- TOPBAR -->
+        <header class="home-topbar">
+            <div class="topbar-left">
+                <div class="topbar-chip">
+                    <span class="topbar-chip-label">Versión</span>
+                    <span id="topbar-instance-version">--</span>
+                </div>
+
+                <div class="topbar-chip">
+                    <span class="topbar-chip-label">Loader</span>
+                    <span id="topbar-instance-loader">--</span>
+                </div>
+            </div>
+
+            <div class="topbar-right">
+                <button class="account-chip" id="account-chip" data-tooltip="Cambiar cuenta">
+                    <div class="player-head" data-tooltip="Perfil"></div>
+
+                    <div class="account-chip-info">
+                        <div class="account-chip-name" id="account-username">Invitado</div>
+                        <div class="account-chip-state" id="account-state">Sin sesión activa</div>
+                    </div>
+
+                    <div class="account-chip-dot"></div>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="home-main">
+            <div class="home-main-grid">
+
+                <!-- HERO INSTANCIA -->
+                <section class="instance-hero">
+                    <div class="instance-hero-inner">
+                        <div class="instance-kicker-row">
+                            <span class="instance-kicker-line"></span>
+                            <span class="instance-kicker">INSTANCIA SELECCIONADA</span>
+                        </div>
+
+                        <div class="instance-title-wrap">
+                            <div class="instance-title" id="selected-instance-title">Minecraft</div>
+                            <div class="instance-subtitle" id="selected-instance-subtitle">Luxfiro Studio</div>
+                        </div>
+
+                        <div class="instance-badges">
+                            <span class="instance-badge" id="selected-instance-version">Versión --</span>
+                            <span class="instance-badge" id="selected-instance-loader">Loader --</span>
+                        </div>
+
+                        <p class="instance-description" id="selected-instance-description">
+                            Selecciona <strong>JUGAR</strong> para iniciar esta instancia y entrar al servidor.
+                        </p>
+
+                        <div class="instance-actions">
+                            <div class="play-instance">
+                                <button class="play-btn">JUGAR</button>
+                            </div>
+
+                            <div
+                                id="open-folder"
+                                class="open-folder-btn"
+                                data-tooltip="Abrir carpeta del launcher"
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z"></path>
+                                </svg>
+                            </div>
+
+                            <div class="info-starting-game">
+                                <div class="info-starting-game-text">Descargando...</div>
+                                <progress value="0" max="100" class="progress-bar"></progress>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+        <!-- BOTTOMBAR -->
+        <footer class="home-bottombar">
+            <div class="bottombar-left">
+                <span class="bottom-meta-text" id="bottom-launcher-name">Luxfiro Studio</span>
+                <span class="bottom-separator"></span>
+                <span class="bottom-meta-text" id="bottom-launcher-version">v1.0.0</span>
+                <span class="bottom-separator"></span>
+                <span class="bottom-meta-text" id="bottom-launcher-extra">Created by ImNotRuso.</span>
+            </div>
+        </footer>
+    </section>
+
+</div>
+
+<script src="assets/js/home.js"></script>
