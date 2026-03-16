@@ -84,7 +84,7 @@ function buildRPCActivity(data = {}) {
         details: `Jugando a ${instanceName}`,
         startTimestamp: Date.now(),
         largeImageKey: 'logo',
-        largeImageText: 'PokeArena Network',
+        largeImageText: 'Luxfiro Studios',
         instance: true
     };
 

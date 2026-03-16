@@ -526,281 +526,257 @@ class Home {
     }
 
     async startGame() {
-        const fs = require('fs');
-        const path = require('path');
+    const fs = require('fs');
+    const path = require('path');
 
-        let launch = new Launch()
+    let launch = new Launch()
 
-        let configClient = await this.db.readData('configClient')
-        console.log("CONFIG CLIENT =>", configClient)
+    let configClient = await this.db.readData('configClient')
+    console.log("CONFIG CLIENT =>", configClient)
 
-        let instance = await config.getInstanceList()
+    let instance = await config.getInstanceList()
 
-        console.log("ACCOUNT_SELECTED =>", configClient.account_selected)
+    console.log("ACCOUNT_SELECTED =>", configClient.account_selected)
 
-        let authenticator = await this.db.readData('accounts', configClient.account_selected)
-        console.log("AUTH OBJECT =>", authenticator)
+    let authenticator = await this.db.readData('accounts', configClient.account_selected)
+    console.log("AUTH OBJECT =>", authenticator)
 
-        if (authenticator && authenticator.meta?.type === 'Xbox') {
-            console.log("Refrescando sesión Microsoft antes de iniciar...")
+    if (authenticator && authenticator.meta?.type === 'Xbox') {
+        console.log("Refrescando sesión Microsoft antes de iniciar...")
 
-            try {
-                let refreshed = await new Microsoft(this.config.client_id).refresh(authenticator)
+        try {
+            let refreshed = await new Microsoft(this.config.client_id).refresh(authenticator)
 
-                if (refreshed.error) {
-                    throw new Error("Refresh inválido")
-                }
-
-                refreshed.ID = authenticator.ID
-
-                await this.db.updateData('accounts', refreshed, authenticator.ID)
-
-                authenticator = refreshed
-
-                console.log("Sesión refrescada correctamente ✅")
-                await this.refreshAccountUI(authenticator)
-
-            } catch (err) {
-                console.log("Error refrescando sesión:", err)
-
-                let pop = new popup()
-                pop.openPopup({
-                    title: 'Sesión expirada',
-                    content: 'Tu sesión expiró. Inicia sesión nuevamente.',
-                    color: 'red',
-                    options: true
-                })
-
-                changePanel('login')
-                return
+            if (refreshed.error) {
+                throw new Error("Refresh inválido")
             }
-        }
 
-        if (!configClient.account_selected) {
-            let pop = new popup()
-            pop.openPopup({
-                title: 'Cuenta no seleccionada',
-                content: 'Debes iniciar sesión con una cuenta premium para jugar.',
-                color: 'red',
-                options: true
-            })
-            changePanel('login')
-            return
-        }
+            refreshed.ID = authenticator.ID
 
-        if (!authenticator) {
-            let pop = new popup()
-            pop.openPopup({
-                title: 'Cuenta inválida',
-                content: 'La cuenta seleccionada no existe. Inicia sesión nuevamente.',
-                color: 'red',
-                options: true
-            })
-            changePanel('login')
-            return
-        }
+            await this.db.updateData('accounts', refreshed, authenticator.ID)
 
-        if (
-            !authenticator.access_token ||
-            !authenticator.client_token ||
-            !authenticator.uuid ||
-            !authenticator.name
-        ) {
+            authenticator = refreshed
+
+            console.log("Sesión refrescada correctamente ✅")
+            await this.refreshAccountUI(authenticator)
+
+        } catch (err) {
+            console.log("Error refrescando sesión:", err)
+
             let pop = new popup()
             pop.openPopup({
                 title: 'Sesión expirada',
-                content: 'Tu sesión premium expiró. Inicia sesión nuevamente.',
+                content: 'Tu sesión expiró. Inicia sesión nuevamente.',
                 color: 'red',
                 options: true
             })
+
             changePanel('login')
             return
         }
-
-        if (authenticator.offline === true) {
-            let pop = new popup()
-            pop.openPopup({
-                title: 'Cuenta no premium',
-                content: 'Esta instancia requiere una cuenta premium.',
-                color: 'red',
-                options: true
-            })
-            return
-        }
-
-        let options = instance.find(i => i.name == configClient.instance_selct)
-
-        let playInstanceBTN = document.querySelector('.play-instance')
-        let infoStartingBOX = document.querySelector('.info-starting-game')
-        let infoStarting = document.querySelector(".info-starting-game-text")
-        let progressBar = document.querySelector('.progress-bar')
-
-        let opt = {
-            url: options.url,
-            authenticator: authenticator,
-            timeout: 30000,
-            path: `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`,
-            instance: options.name,
-            version: options.loadder.minecraft_version,
-            detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
-            downloadFileMultiple: configClient.launcher_config.download_multi,
-            intelEnabledMac: configClient.launcher_config.intelEnabledMac,
-
-            loader: {
-                type: options.loadder.loadder_type,
-                build: options.loadder.loadder_version,
-                enable: options.loadder.loadder_type == 'none' ? false : true
-            },
-
-            verify: options.verify,
-            ignored: [...options.ignored],
-            java: {
-                path: configClient.java_config.java_path
-            },
-
-            screen: {
-                width: configClient.game_config.screen_size.width,
-                height: configClient.game_config.screen_size.height
-            },
-
-            memory: {
-                min: `${configClient.java_config.java_memory.min * 1024}M`,
-                max: `${configClient.java_config.java_memory.max * 1024}M`
-            }
-        }
-
-        ipcRenderer.send('minecraft-launch');
-
-        try {
-            const baseDir = path.join(process.env.APPDATA, '.SUH');
-
-            const asmDir = path.join(baseDir, 'libraries', 'org', 'ow2', 'asm', '9.6');
-            const asmJar = path.join(baseDir, 'libraries', 'org', 'ow2', 'asm', 'asm-9.6.jar');
-            if (fs.existsSync(asmDir)) {
-                fs.rmSync(asmDir, { recursive: true, force: true });
-                console.log('[Launcher]: Eliminada carpeta vieja ASM 9.6');
-            }
-            if (fs.existsSync(asmJar)) {
-                fs.rmSync(asmJar, { force: true });
-                console.log('[Launcher]: Eliminado archivo asm-9.6.jar');
-            }
-
-            const versionsDir = path.join(baseDir, 'versions');
-            if (fs.existsSync(versionsDir)) {
-                const versions = fs.readdirSync(versionsDir).filter(v => {
-                    const jsonFile = path.join(versionsDir, v, `${v}.json`);
-                    return fs.existsSync(jsonFile);
-                });
-
-                for (const version of versions) {
-                    const versionPath = path.join(versionsDir, version, `${version}.json`);
-                    try {
-                        let json = fs.readFileSync(versionPath, 'utf8');
-                        if (json.includes('org.ow2.asm:asm:9.6')) {
-                            json = json.replace(/,\s*{\s*"downloads"[\s\S]+?"org\.ow2\.asm:asm:9\.6"[\s\S]+?}/, '');
-                            fs.writeFileSync(versionPath, json);
-                            console.log(`[Launcher]: Eliminada referencia a ASM 9.6 en ${version}.json`);
-                        }
-                    } catch (err) {
-                        console.warn(`[Launcher]: No se pudo editar ${version}.json:`, err);
-                    }
-                }
-            }
-        } catch (err) {
-            console.warn('[Launcher]: Error al limpiar ASM 9.6 automáticamente:', err);
-        }
-
-        launch.Launch(opt);
-
-        console.log("AUTH OBJECT =>", authenticator);
-        playInstanceBTN.style.display = "none";
-        infoStartingBOX.style.display = "flex";
-        progressBar.style.display = "";
-        progressBar.value = 0;
-        progressBar.max = 100;
-
-        const steps = [
-            { text: 'Verificando archivos...', value: 25 },
-            { text: 'Preparando librerías...', value: 50 },
-            { text: 'Configurando instancia...', value: 75 },
-            { text: 'Ejecutando!', value: 100 }
-        ];
-
-        let currentStep = 0;
-        const prepInterval = setInterval(() => {
-            progressBar.value = steps[currentStep].value;
-            infoStarting.innerHTML = steps[currentStep].text;
-            currentStep++;
-
-            if (currentStep >= steps.length) {
-                clearInterval(prepInterval);
-            }
-        }, 700);
-
-        launch.on('progress', (percent) => {
-            clearInterval(prepInterval);
-            const clean = Math.min(Math.max(percent, 0), 100);
-            infoStarting.innerHTML = `Descargando ${clean.toFixed(0)}%`;
-            progressBar.value = clean;
-            progressBar.max = 100;
-        });
-
-        launch.on('extract', file => {
-            infoStarting.innerHTML = `Verificando ${file}`
-        });
-
-        launch.on('estimated', (time) => {
-            let hours = Math.floor(time / 3600);
-            let minutes = Math.floor((time - hours * 3600) / 60);
-            let seconds = Math.floor(time - hours * 3600 - minutes * 60);
-            console.log(`${hours}h ${minutes}m ${seconds}s`);
-        })
-
-        launch.on('speed', (speed) => {
-            console.log(`${(speed / 1067008).toFixed(2)} Mb/s`)
-        })
-
-        launch.on('patch', patch => {
-            console.log(patch);
-            ipcRenderer.send('main-window-progress-load')
-            infoStarting.innerHTML = `Configurando el juego...`
-        });
-
-        launch.on('data', (e) => {
-            progressBar.style.display = "none"
-            if (configClient.launcher_config.closeLauncher == 'close-launcher') {
-                ipcRenderer.send("main-window-hide")
-            };
-            new logger('Minecraft', '#36b030');
-            ipcRenderer.send('main-window-progress-load')
-            infoStarting.innerHTML = `Ejecutando...`
-            console.log(e);
-        })
-
-        launch.on('close', () => {
-            ipcRenderer.send('force-exit');
-            return;
-        });
-
-        launch.on('error', err => {
-            let popupError = new popup()
-            popupError.openPopup({
-                title: 'Error',
-                content: err.error,
-                color: 'red',
-                options: true
-            })
-            if (configClient.launcher_config.closeLauncher == 'close-launcher') {
-                ipcRenderer.send("main-window-show")
-            };
-            ipcRenderer.send('main-window-progress-reset')
-            infoStartingBOX.style.display = "none"
-            playInstanceBTN.style.display = "flex"
-            infoStarting.innerHTML = `Verificación`
-            new logger(pkg.name, '#7289da');
-            console.log(err);
-        });
     }
+
+    if (!configClient.account_selected) {
+        let pop = new popup()
+        pop.openPopup({
+            title: 'Cuenta no seleccionada',
+            content: 'Debes iniciar sesión con una cuenta premium para jugar.',
+            color: 'red',
+            options: true
+        })
+        changePanel('login')
+        return
+    }
+
+    if (!authenticator) {
+        let pop = new popup()
+        pop.openPopup({
+            title: 'Cuenta inválida',
+            content: 'La cuenta seleccionada no existe. Inicia sesión nuevamente.',
+            color: 'red',
+            options: true
+        })
+        changePanel('login')
+        return
+    }
+
+    if (
+        !authenticator.access_token ||
+        !authenticator.client_token ||
+        !authenticator.uuid ||
+        !authenticator.name
+    ) {
+        let pop = new popup()
+        pop.openPopup({
+            title: 'Sesión expirada',
+            content: 'Tu sesión premium expiró. Inicia sesión nuevamente.',
+            color: 'red',
+            options: true
+        })
+        changePanel('login')
+        return
+    }
+
+    if (authenticator.offline === true) {
+        let pop = new popup()
+        pop.openPopup({
+            title: 'Cuenta no premium',
+            content: 'Esta instancia requiere una cuenta premium.',
+            color: 'red',
+            options: true
+        })
+        return
+    }
+
+    let options = instance.find(i => i.name == configClient.instance_selct)
+
+    let playInstanceBTN = document.querySelector('.play-instance')
+    let infoStartingBOX = document.querySelector('.info-starting-game')
+    let infoStarting = document.querySelector(".info-starting-game-text")
+    let progressBar = document.querySelector('.progress-bar')
+
+    let opt = {
+        url: options.url,
+        authenticator: authenticator,
+        timeout: 120000,
+        path: `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`,
+        instance: options.name,
+        version: options.loadder.minecraft_version,
+        detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
+        downloadFileMultiple: configClient.launcher_config.download_multi,
+        intelEnabledMac: configClient.launcher_config.intelEnabledMac,
+
+        loader: {
+            type: options.loadder.loadder_type,
+            build: options.loadder.loadder_version,
+            enable: options.loadder.loadder_type == 'none' ? false : true
+        },
+
+        verify: options.verify,
+        ignored: [...options.ignored],
+        java: {
+            path: configClient.java_config.java_path
+        },
+
+        screen: {
+            width: configClient.game_config.screen_size.width,
+            height: configClient.game_config.screen_size.height
+        },
+
+        memory: {
+            min: `${configClient.java_config.java_memory.min * 1024}M`,
+            max: `${configClient.java_config.java_memory.max * 1024}M`
+        }
+    }
+
+    ipcRenderer.send('minecraft-launch');
+
+    console.log('INSTANCIA SELECCIONADA =>', options)
+    console.log('JAVA PATH =>', configClient.java_config.java_path)
+    console.log('MC VERSION =>', options?.loadder?.minecraft_version)
+    console.log('LOADER TYPE =>', options?.loadder?.loadder_type)
+    console.log('LOADER VERSION =>', options?.loadder?.loadder_version)
+    console.log('FULL OPT =>', opt)
+
+    playInstanceBTN.style.display = "none";
+    infoStartingBOX.style.display = "flex";
+    progressBar.style.display = "";
+    progressBar.value = 0;
+    progressBar.max = 100;
+    infoStarting.innerHTML = `Preparando descarga...`;
+
+    launch.on('progress', (downloaded, total) => {
+        const safeDownloaded = Number(downloaded) || 0;
+        const safeTotal = Number(total) || 0;
+
+        const percent = safeTotal > 0 ? (safeDownloaded / safeTotal) * 100 : 0;
+        const clean = Math.min(Math.max(percent, 0), 100);
+
+        const downloadedMB = (safeDownloaded / 1024 / 1024).toFixed(2);
+        const totalMB = safeTotal > 0 ? (safeTotal / 1024 / 1024).toFixed(2) : '0.00';
+
+        infoStarting.innerHTML = `Descargando ${clean.toFixed(0)}% · ${downloadedMB} MB / ${totalMB} MB`;
+        progressBar.value = clean;
+
+        ipcRenderer.send('main-window-progress', {
+            progress: safeDownloaded,
+            size: safeTotal > 0 ? safeTotal : 1
+        });
+    });
+
+    launch.on('extract', file => {
+        infoStarting.innerHTML = `Verificando ${file}`
+    });
+
+    launch.on('patch', () => {
+        ipcRenderer.send('main-window-progress-reset')
+        infoStarting.innerHTML = `Configurando el juego...`
+    });
+
+    launch.on('data', (e) => {
+        progressBar.style.display = "none"
+
+        if (configClient.launcher_config.closeLauncher == 'close-launcher') {
+            ipcRenderer.send("main-window-hide")
+        };
+
+        new logger('Minecraft', '#36b030');
+
+        ipcRenderer.send('main-window-progress-reset')
+        infoStarting.innerHTML = `Ejecutando...`
+
+        console.log(e);
+    })
+
+    launch.on('debug', (e) => {
+        console.log('[DEBUG]', e)
+    })
+
+    launch.on('close', () => {
+        ipcRenderer.send('force-exit');
+    });
+
+    launch.on('error', err => {
+        console.error('Launch error raw =>', err)
+        console.error('Instancia actual =>', options)
+        console.error('Launch opt =>', opt)
+
+        const message =
+            err?.error ||
+            err?.message ||
+            err?.stack ||
+            (typeof err === 'string' ? err : null) ||
+            'La instancia no pudo iniciarse. Revisa Forge, Java y la configuración de la instancia.'
+
+        let popupError = new popup()
+        popupError.openPopup({
+            title: 'Error',
+            content: message,
+            color: 'red',
+            options: true
+        })
+
+        if (configClient.launcher_config.closeLauncher == 'close-launcher') {
+            ipcRenderer.send("main-window-show")
+        }
+
+        ipcRenderer.send('main-window-progress-reset')
+
+        infoStartingBOX.style.display = "none"
+        playInstanceBTN.style.display = "flex"
+        progressBar.value = 0
+
+        infoStarting.innerHTML = `Verificación`
+
+        new logger(pkg.name, '#7289da')
+    })
+
+    try {
+        launch.Launch(opt);
+    } catch (err) {
+        console.error('Launch throw =>', err);
+    }
+}
 
     async loadNewsAndTikTok(instanceType = "cobblemon") {
         try {

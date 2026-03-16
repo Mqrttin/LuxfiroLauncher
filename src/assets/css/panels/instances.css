@@ -346,13 +346,15 @@
 .instances-content {
     flex: 1;
     min-height: 0;
+    height: 100%;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .instances-loading,
-.instances-empty,
-.instances-rows-wrap {
+.instances-empty {
     width: 100%;
     height: 100%;
     min-height: 0;
@@ -413,8 +415,14 @@
 
 .instances-rows-wrap {
     display: none;
-    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    flex: 1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: max-content;
     gap: 14px;
+    align-content: start;
+    align-items: start;
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 4px;
@@ -424,13 +432,6 @@
 
 .instances-rows-wrap::-webkit-scrollbar {
     display: none;
-}
-
-.instances-row {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
-    align-items: stretch;
 }
 
 /* ================================================= */
@@ -450,6 +451,7 @@
     flex-direction: column;
     cursor: pointer;
     position: relative;
+    align-self: start;
     transition:
         transform .22s ease,
         border-color .22s ease,
@@ -639,12 +641,6 @@
 /* RESPONSIVE */
 /* ================================================= */
 
-@media (max-width: 1280px) {
-    .instances-row {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-}
-
 @media (max-width: 980px) {
     .instances-topbar {
         padding-left: 18px;
@@ -663,10 +659,6 @@
         padding: 26px 22px 22px;
     }
 
-    .instances-row {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .instances-title {
         font-size: 30px;
     }
@@ -678,20 +670,6 @@
 
     .instances-topbar-note {
         display: none;
-    }
-}
-
-@media (max-width: 640px) {
-    .instances-row {
-        grid-template-columns: 1fr;
-    }
-
-    .instance-card {
-        min-height: 220px;
-    }
-
-    .instance-card-image-wrapper {
-        height: 120px;
     }
 }
 
@@ -785,4 +763,30 @@
     background: linear-gradient(135deg, rgba(78, 164, 255, 0.22), rgba(91, 213, 255, 0.15));
     border-color: rgba(112, 198, 255, 0.35);
     box-shadow: 0 0 18px rgba(88, 180, 255, 0.12);
+}
+
+@media (max-width: 1280px) {
+    .instances-rows-wrap {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 980px) {
+    .instances-rows-wrap {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .instances-rows-wrap {
+        grid-template-columns: 1fr;
+    }
+
+    .instance-card {
+        min-height: 220px;
+    }
+
+    .instance-card-image-wrapper {
+        height: 120px;
+    }
 }

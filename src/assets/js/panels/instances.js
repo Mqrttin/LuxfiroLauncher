@@ -346,17 +346,8 @@ class Instances {
 
         this.rowsElement.innerHTML = ''
 
-        const rows = this.chunkIntoRows(this.instances, 4)
-
-        for (const rowItems of rows) {
-            const row = document.createElement('div')
-            row.className = 'instances-row'
-
-            for (const instance of rowItems) {
-                row.appendChild(this.createCard(instance))
-            }
-
-            this.rowsElement.appendChild(row)
+        for (const instance of this.instances) {
+            this.rowsElement.appendChild(this.createCard(instance))
         }
 
         this.showRows()
@@ -375,9 +366,9 @@ class Instances {
     }
 
     showRows() {
-        if (this.loadingElement) this.loadingElement.style.display = 'none'
-        if (this.emptyElement) this.emptyElement.style.display = 'none'
-        if (this.rowsElement) this.rowsElement.style.display = 'flex'
+    if (this.loadingElement) this.loadingElement.style.display = 'none'
+    if (this.emptyElement) this.emptyElement.style.display = 'none'
+    if (this.rowsElement) this.rowsElement.style.display = 'grid'
     }
 
     escapeHtml(value = '') {

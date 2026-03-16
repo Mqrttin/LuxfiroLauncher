@@ -272,6 +272,24 @@ class Settings {
         return badge;
     }
 
+    updateRamSliderLabels(min, max) {
+        const leftLabel = document.querySelector('.slider-touch-left span');
+        const rightLabel = document.querySelector('.slider-touch-right span');
+
+        const safeMin = Number(min);
+        const safeMax = Number(max);
+
+        if (leftLabel) {
+            leftLabel.setAttribute('value', `${safeMin} GB`);
+            leftLabel.textContent = '';
+        }
+
+        if (rightLabel) {
+            rightLabel.setAttribute('value', `${safeMax} GB`);
+            rightLabel.textContent = '';
+        }
+    }
+
     async syncSelectedAccountCardState() {
         const selectedId = await this.getSelectedAccountId();
         const accountsList = document.querySelector('.accounts-list');
@@ -451,6 +469,7 @@ class Settings {
         try {
             this.ramSliderInstance = new Slider(".memory-slider", ram.ramMin, ram.ramMax);
             this.ramSliderInitialized = true;
+            this.updateRamSliderLabels(ram.ramMin, ram.ramMax);
         } catch (err) {
             console.error('[Settings] Error inicializando slider RAM:', err);
             return;
@@ -459,6 +478,8 @@ class Settings {
         this.ramSliderInstance.on("change", async (min, max) => {
             const safeMin = Math.max(1, parseFloat(min));
             const safeMax = Math.max(safeMin, parseFloat(max));
+
+            this.updateRamSliderLabels(safeMin, safeMax);
 
             let config = await this.db.readData('configClient');
 
