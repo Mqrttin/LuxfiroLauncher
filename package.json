@@ -1,7 +1,7 @@
 {
     "name": "luxfiro-launcher",
     "productName": "Luxfiro Launcher",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Launcher Oficial de Luxfiro Studio",
     "main": "src/app.js",
     "author": {

@@ -2,7 +2,7 @@
  * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
-import { config, database, setStatus, setBackgroundAnimated, changePanel } from '../utils.js'
+import { config, database, setStatus, setBackgroundAnimated, changePanel, popup } from '../utils.js'
 
 class Instances {
     static id = "instances";
@@ -60,7 +60,10 @@ class Instances {
         this.db = new database()
 
         this.instances = []
+        this.visibleInstances = []
         this.selectedInstanceName = null
+        this.selectedAccount = null
+        this.selectedAccountName = ''
 
         this.rowsElement = document.getElementById('instances-rows')
         this.loadingElement = document.getElementById('instances-loading')
@@ -71,6 +74,7 @@ class Instances {
 
         this.initSidebar()
         this.initTooltips()
+        this.bindAccountSelectionListener()
 
         if (this.backButton) {
             this.backButton.onclick = () => {
@@ -80,6 +84,7 @@ class Instances {
 
         try {
             await this.loadSelectedInstance()
+            await this.loadSelectedAccount()
             await this.loadInstances()
         } catch (err) {
             console.error('[Instances] Error al iniciar panel:', err)
@@ -146,7 +151,6 @@ class Instances {
 
             tooltip.innerText = text
             tooltip.style.opacity = "1"
-
             tooltip.style.left = "0px"
             tooltip.style.top = "0px"
 
@@ -183,6 +187,32 @@ class Instances {
         })
     }
 
+    bindAccountSelectionListener() {
+        document.addEventListener('account:selected', async (e) => {
+        try {
+            const accountFromEvent = e?.detail?.account || null
+
+            if (accountFromEvent) {
+                this.selectedAccount = accountFromEvent
+                this.selectedAccountName = String(
+                    accountFromEvent?.name ||
+                    accountFromEvent?.username ||
+                    ''
+                ).trim()
+            } else {
+                await this.loadSelectedAccount()
+            }
+
+            console.log('[Instances] Cuenta actualizada por evento:', this.selectedAccountName || '(sin cuenta)')
+
+            await this.loadSelectedInstance()
+            await this.loadInstances()
+        } catch (err) {
+            console.error('[Instances] Error refrescando instancias al cambiar de cuenta:', err)
+        }
+    })
+}
+
     async loadSelectedInstance() {
         try {
             const configClient = await this.db.readData('configClient')
@@ -192,15 +222,102 @@ class Instances {
         }
     }
 
+    async loadSelectedAccount() {
+        try {
+            const configClient = await this.db.readData('configClient')
+            const accountId = configClient?.account_selected
+
+            console.log('[Instances] account_selected ID =>', accountId)
+
+            if (!accountId) {
+                this.selectedAccount = null
+                this.selectedAccountName = ''
+                return
+            }
+
+            const account = await this.db.readData('accounts', accountId)
+
+            console.log('[Instances] Cuenta completa =>', account)
+
+            this.selectedAccount = account
+            this.selectedAccountName = String(account?.name || account?.username || '').trim()
+
+            console.log('[Instances] Cuenta seleccionada detectada:', this.selectedAccountName || '(sin cuenta)')
+        } catch (err) {
+            console.error('[Instances] Error leyendo cuenta seleccionada:', err)
+            this.selectedAccount = null
+            this.selectedAccountName = ''
+        }
+    }
+
+    normalizeWhitelist(list) {
+        if (!Array.isArray(list)) return []
+
+        return list
+            .map(item => String(item || '').trim().toLowerCase())
+            .filter(Boolean)
+    }
+
+    isInstanceAllowed(instance, selectedAccount = null) {
+        if (!instance) return false
+
+        const whitelistActive = Boolean(instance?.whitelistActive)
+        if (!whitelistActive) return true
+
+        const whitelist = this.normalizeWhitelist(instance?.whitelist)
+        if (!whitelist.length) return false
+
+        const username = String(
+            selectedAccount?.name ||
+            selectedAccount?.username ||
+            this.selectedAccountName ||
+            ''
+        ).trim().toLowerCase()
+
+        console.log('[Instances] Validando instancia =>', {
+            instance: instance?.name,
+            whitelistActive,
+            whitelist,
+            detectedUsername: username
+        })
+
+        if (!username) return false
+
+        return whitelist.includes(username)
+    }
+
+    filterInstancesByWhitelist(instancesList = []) {
+        if (!Array.isArray(instancesList)) return []
+        return instancesList.filter(instance => this.isInstanceAllowed(instance, this.selectedAccount))
+    }
+
+    async clearSelectedInstanceIfNotAllowed() {
+        if (!this.selectedInstanceName) return
+
+        const selected = this.instances.find(instance => instance?.name === this.selectedInstanceName)
+        if (!selected) return
+
+        if (this.isInstanceAllowed(selected, this.selectedAccount)) return
+
+        try {
+            const configClient = await this.db.readData('configClient')
+            configClient.instance_selct = null
+            await this.db.updateData('configClient', configClient)
+        } catch (err) {
+            console.error('[Instances] No se pudo limpiar la instancia seleccionada bloqueada:', err)
+        }
+
+        console.warn('[Instances] La instancia seleccionada estaba bloqueada para la cuenta actual:', this.selectedInstanceName)
+        this.selectedInstanceName = null
+    }
+
     async loadInstances() {
         this.showLoading()
 
         let instancesList = []
         try {
             instancesList = await config.getInstanceList()
-
-            console.log("INSTANCIAS WEBHOST =>", instancesList.map(i => i.name))
-
+            console.log('INSTANCIAS WEBHOST =>', instancesList.map(i => i.name))
         } catch (err) {
             console.error('[Instances] Error obteniendo instancias:', err)
             instancesList = []
@@ -216,6 +333,17 @@ class Instances {
             const nameB = b?.name || ''
             return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' })
         })
+
+        await this.clearSelectedInstanceIfNotAllowed()
+
+        this.visibleInstances = this.filterInstancesByWhitelist(this.instances)
+
+        console.log('[Instances] Instancias visibles para la cuenta actual =>', this.visibleInstances.map(i => i.name))
+
+        if (!this.visibleInstances.length) {
+            this.showEmpty()
+            return
+        }
 
         this.render()
     }
@@ -314,6 +442,28 @@ class Instances {
         try {
             if (!instance?.name) return
 
+            await this.loadSelectedAccount()
+
+            if (!this.isInstanceAllowed(instance, this.selectedAccount)) {
+                console.warn('[Instances] Acceso bloqueado a la instancia:', instance.name)
+
+                if (popup && typeof popup === 'function') {
+                    const modal = new popup()
+                    if (typeof modal.openPopup === 'function') {
+                        modal.openPopup({
+                            title: 'Instancia bloqueada',
+                            content: `La instancia <b>${this.escapeHtml(instance.name)}</b> no está disponible para la cuenta seleccionada.`
+                        })
+                    } else {
+                        alert(`La instancia "${instance.name}" no está disponible para la cuenta seleccionada.`)
+                    }
+                } else {
+                    alert(`La instancia "${instance.name}" no está disponible para la cuenta seleccionada.`)
+                }
+
+                return
+            }
+
             const configClient = await this.db.readData('configClient')
             configClient.instance_selct = instance.name
             await this.db.updateData('configClient', configClient)
@@ -346,7 +496,12 @@ class Instances {
 
         this.rowsElement.innerHTML = ''
 
-        for (const instance of this.instances) {
+        if (!Array.isArray(this.visibleInstances) || !this.visibleInstances.length) {
+            this.showEmpty()
+            return
+        }
+
+        for (const instance of this.visibleInstances) {
             this.rowsElement.appendChild(this.createCard(instance))
         }
 
@@ -366,9 +521,9 @@ class Instances {
     }
 
     showRows() {
-    if (this.loadingElement) this.loadingElement.style.display = 'none'
-    if (this.emptyElement) this.emptyElement.style.display = 'none'
-    if (this.rowsElement) this.rowsElement.style.display = 'grid'
+        if (this.loadingElement) this.loadingElement.style.display = 'none'
+        if (this.emptyElement) this.emptyElement.style.display = 'none'
+        if (this.rowsElement) this.rowsElement.style.display = 'grid'
     }
 
     escapeHtml(value = '') {
