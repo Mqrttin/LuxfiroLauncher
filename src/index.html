@@ -1,17 +1,48 @@
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="Content-Security-Policy" content="script-src 'self';">
-        <link rel="stylesheet" href="assets/css/index.css">
-    </head>
-    <body>
-        <div id="splash" style="display:none">
-            <img class="splash" src="assets/images/icon.png" />
-            <p class="splash-message"></p>
-            <p class="splash-author"><span class="author"></span></p>
-            <p class="message">Buscando actualizaciones...</p>
-            <progress value="0" max="0" class="progress"></progress>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Luxfiro Studio</title>
+    <link rel="stylesheet" href="./assets/css/index.css" />
+</head>
+<body>
+    <div id="splash" class="splash-screen">
+        <div class="splash-overlay"></div>
+        <div class="splash-grid"></div>
+        <div class="splash-glow"></div>
+
+        <div class="splash">
+            <div class="splash-brand">
+                <img
+                    src="./assets/images/icon.png"
+                    alt="Luxfiro Studio"
+                    class="splash-logo"
+                    draggable="false"
+                />
+
+                <div class="splash-text-block">
+                    <div class="splash-message">Luxfiro</div>
+                    <div class="splash-subtitle">STUDIO</div>
+                </div>
+            </div>
+
+            <div class="splash-author">
+                <span>@ImNotRuso/Mqrttin</span>
+            </div>
         </div>
-        <script src="assets/js/index.js" type="module"></script>
-    </body>
+
+        <div class="splash-status">
+            <div class="status-inline">
+                <span class="message">Iniciando launcher</span>
+                <span class="loading-ring" aria-hidden="true"></span>
+            </div>
+
+            <progress class="progress" value="0" max="100"></progress>
+        </div>
+    </div>
+
+    <script type="module" src="./assets/js/index.js"></script>
+</body>
 </html>

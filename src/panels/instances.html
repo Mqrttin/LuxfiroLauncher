@@ -84,6 +84,18 @@
                         </p>
                     </div>
 
+                    <div class="instances-actions">
+                        <button class="instances-redeem-btn" id="insert-instance-code" type="button">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M8 7h8"></path>
+                                <path d="M7 12h10"></path>
+                                <path d="M10 17h4"></path>
+                                <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+                            </svg>
+                            <span>Insertar código</span>
+                        </button>
+                    </div>
+
                     <div class="instances-content">
                         <div class="instances-loading" id="instances-loading">
                             <div class="instances-loading-card">
@@ -118,6 +130,45 @@
             </div>
         </footer>
     </section>
+</div>
+
+<div class="instance-code-modal-overlay" id="instance-code-modal-overlay" style="display:none;">
+    <div class="instance-code-modal" id="instance-code-modal">
+        <button class="instance-code-modal-close" id="instance-code-close" type="button" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12"></path>
+                <path d="M18 6l-12 12"></path>
+            </svg>
+        </button>
+
+        <div class="instance-code-modal-kicker">Desbloquear instancia</div>
+        <h2 class="instance-code-modal-title">Canjear código</h2>
+        <p class="instance-code-modal-text">
+            Ingresa el código de una instancia para desbloquearla en este launcher.
+        </p>
+
+        <div class="instance-code-input-wrap">
+            <input
+                id="instance-code-input"
+                class="instance-code-input"
+                type="text"
+                placeholder="Escribe tu código aquí"
+                autocomplete="off"
+                spellcheck="false"
+            >
+        </div>
+
+        <div class="instance-code-message" id="instance-code-message"></div>
+
+        <div class="instance-code-modal-actions">
+            <button class="instance-code-btn instance-code-btn-secondary" id="instance-code-cancel" type="button">
+                Cancelar
+            </button>
+            <button class="instance-code-btn instance-code-btn-primary" id="instance-code-confirm" type="button">
+                Canjear
+            </button>
+        </div>
+    </div>
 </div>
 
 <script src="assets/js/instances.js"></script>

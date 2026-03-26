@@ -64,17 +64,28 @@ class Instances {
         this.selectedInstanceName = null
         this.selectedAccount = null
         this.selectedAccountName = ''
+        this.redeemedInstances = []
 
         this.rowsElement = document.getElementById('instances-rows')
         this.loadingElement = document.getElementById('instances-loading')
         this.emptyElement = document.getElementById('instances-empty')
         this.backButton = document.getElementById('back-home')
 
+        this.redeemButton = document.getElementById('insert-instance-code')
+        this.redeemModal = document.getElementById('instance-code-modal')
+        this.redeemModalOverlay = document.getElementById('instance-code-modal-overlay')
+        this.redeemInput = document.getElementById('instance-code-input')
+        this.redeemConfirmButton = document.getElementById('instance-code-confirm')
+        this.redeemCancelButton = document.getElementById('instance-code-cancel')
+        this.redeemCloseButton = document.getElementById('instance-code-close')
+        this.redeemMessage = document.getElementById('instance-code-message')
+
         this.lockViewportScroll()
 
         this.initSidebar()
         this.initTooltips()
         this.bindAccountSelectionListener()
+        this.bindRedeemModal()
 
         if (this.backButton) {
             this.backButton.onclick = () => {
@@ -85,6 +96,7 @@ class Instances {
         try {
             await this.loadSelectedInstance()
             await this.loadSelectedAccount()
+            await this.loadRedeemedInstances()
             await this.loadInstances()
         } catch (err) {
             console.error('[Instances] Error al iniciar panel:', err)
@@ -189,29 +201,131 @@ class Instances {
 
     bindAccountSelectionListener() {
         document.addEventListener('account:selected', async (e) => {
-        try {
-            const accountFromEvent = e?.detail?.account || null
+            try {
+                const accountFromEvent = e?.detail?.account || null
 
-            if (accountFromEvent) {
-                this.selectedAccount = accountFromEvent
-                this.selectedAccountName = String(
-                    accountFromEvent?.name ||
-                    accountFromEvent?.username ||
-                    ''
-                ).trim()
-            } else {
-                await this.loadSelectedAccount()
+                if (accountFromEvent) {
+                    this.selectedAccount = accountFromEvent
+                    this.selectedAccountName = String(
+                        accountFromEvent?.name ||
+                        accountFromEvent?.username ||
+                        ''
+                    ).trim()
+                } else {
+                    await this.loadSelectedAccount()
+                }
+
+                console.log('[Instances] Cuenta actualizada por evento:', this.selectedAccountName || '(sin cuenta)')
+
+                await this.loadSelectedInstance()
+                await this.loadRedeemedInstances()
+                await this.loadInstances()
+            } catch (err) {
+                console.error('[Instances] Error refrescando instancias al cambiar de cuenta:', err)
             }
+        })
+    }
 
-            console.log('[Instances] Cuenta actualizada por evento:', this.selectedAccountName || '(sin cuenta)')
-
-            await this.loadSelectedInstance()
-            await this.loadInstances()
-        } catch (err) {
-            console.error('[Instances] Error refrescando instancias al cambiar de cuenta:', err)
+    bindRedeemModal() {
+        if (this.redeemButton) {
+            this.redeemButton.addEventListener('click', () => this.openRedeemModal())
         }
-    })
-}
+
+        if (this.redeemCancelButton) {
+            this.redeemCancelButton.addEventListener('click', () => this.closeRedeemModal())
+        }
+
+        if (this.redeemCloseButton) {
+            this.redeemCloseButton.addEventListener('click', () => this.closeRedeemModal())
+        }
+
+        if (this.redeemModalOverlay) {
+            this.redeemModalOverlay.addEventListener('click', (e) => {
+                if (e.target === this.redeemModalOverlay) {
+                    this.closeRedeemModal()
+                }
+            })
+        }
+
+        if (this.redeemConfirmButton) {
+            this.redeemConfirmButton.addEventListener('click', async () => {
+                await this.redeemCode()
+            })
+        }
+
+        if (this.redeemInput) {
+            this.redeemInput.addEventListener('keydown', async (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault()
+                    await this.redeemCode()
+                }
+
+                if (e.key === 'Escape') {
+                    e.preventDefault()
+                    this.closeRedeemModal()
+                }
+            })
+
+            this.redeemInput.addEventListener('input', () => {
+                this.setRedeemMessage('', '')
+            })
+        }
+    }
+
+    openRedeemModal() {
+        if (!this.redeemModalOverlay) return
+
+        this.setRedeemMessage('', '')
+        this.redeemModalOverlay.style.display = 'flex'
+
+        requestAnimationFrame(() => {
+            this.redeemModalOverlay.classList.add('show')
+            if (this.redeemInput) {
+                this.redeemInput.value = ''
+                this.redeemInput.focus()
+            }
+        })
+    }
+
+    closeRedeemModal() {
+        if (!this.redeemModalOverlay) return
+
+        this.redeemModalOverlay.classList.remove('show')
+
+        setTimeout(() => {
+            if (!this.redeemModalOverlay.classList.contains('show')) {
+                this.redeemModalOverlay.style.display = 'none'
+            }
+        }, 180)
+    }
+
+    setRedeemMessage(text = '', type = '') {
+        if (!this.redeemMessage) return
+
+        this.redeemMessage.textContent = text
+        this.redeemMessage.classList.remove('success', 'error')
+
+        if (type) {
+            this.redeemMessage.classList.add(type)
+        }
+    }
+
+    normalizeCode(code) {
+        return String(code || '').trim()
+    }
+
+    normalizeCodeForCompare(code) {
+        return this.normalizeCode(code).toLowerCase()
+    }
+
+    hasCode(instance) {
+        return this.normalizeCode(instance?.code).length > 0
+    }
+
+    isInstanceRedeemed(instance) {
+        if (!instance?.name) return false
+        return this.redeemedInstances.includes(String(instance.name))
+    }
 
     async loadSelectedInstance() {
         try {
@@ -250,6 +364,37 @@ class Instances {
         }
     }
 
+    async loadRedeemedInstances() {
+        try {
+            const configClient = await this.db.readData('configClient')
+            const redeemed = configClient?.redeemed_instances
+
+            if (Array.isArray(redeemed)) {
+                this.redeemedInstances = redeemed
+                    .map(item => String(item || '').trim())
+                    .filter(Boolean)
+            } else {
+                this.redeemedInstances = []
+            }
+
+            console.log('[Instances] Instancias canjeadas =>', this.redeemedInstances)
+        } catch (err) {
+            console.error('[Instances] Error leyendo instancias canjeadas:', err)
+            this.redeemedInstances = []
+        }
+    }
+
+    async saveRedeemedInstances() {
+        try {
+            const configClient = await this.db.readData('configClient')
+            configClient.redeemed_instances = this.redeemedInstances
+            await this.db.updateData('configClient', configClient)
+        } catch (err) {
+            console.error('[Instances] Error guardando instancias canjeadas:', err)
+            throw err
+        }
+    }
+
     normalizeWhitelist(list) {
         if (!Array.isArray(list)) return []
 
@@ -258,7 +403,7 @@ class Instances {
             .filter(Boolean)
     }
 
-    isInstanceAllowed(instance, selectedAccount = null) {
+    isWhitelistedInstanceAllowed(instance, selectedAccount = null) {
         if (!instance) return false
 
         const whitelistActive = Boolean(instance?.whitelistActive)
@@ -274,7 +419,7 @@ class Instances {
             ''
         ).trim().toLowerCase()
 
-        console.log('[Instances] Validando instancia =>', {
+        console.log('[Instances] Validando whitelist =>', {
             instance: instance?.name,
             whitelistActive,
             whitelist,
@@ -286,7 +431,27 @@ class Instances {
         return whitelist.includes(username)
     }
 
-    filterInstancesByWhitelist(instancesList = []) {
+    isInstanceAllowed(instance, selectedAccount = null) {
+        if (!instance) return false
+
+        const hasCode = this.hasCode(instance)
+
+        if (hasCode) {
+            const redeemed = this.isInstanceRedeemed(instance)
+
+            console.log('[Instances] Validando instancia con código =>', {
+                instance: instance?.name,
+                codeConfigured: true,
+                redeemed
+            })
+
+            return redeemed
+        }
+
+        return this.isWhitelistedInstanceAllowed(instance, selectedAccount)
+    }
+
+    filterInstancesByAccess(instancesList = []) {
         if (!Array.isArray(instancesList)) return []
         return instancesList.filter(instance => this.isInstanceAllowed(instance, this.selectedAccount))
     }
@@ -309,6 +474,54 @@ class Instances {
 
         console.warn('[Instances] La instancia seleccionada estaba bloqueada para la cuenta actual:', this.selectedInstanceName)
         this.selectedInstanceName = null
+    }
+
+    findInstanceByCode(rawCode) {
+        const codeToFind = this.normalizeCodeForCompare(rawCode)
+        if (!codeToFind) return null
+
+        return this.instances.find(instance => {
+            const instanceCode = this.normalizeCodeForCompare(instance?.code)
+            return instanceCode && instanceCode === codeToFind
+        }) || null
+    }
+
+    async redeemCode() {
+        try {
+            const typedCode = this.normalizeCode(this.redeemInput?.value || '')
+
+            if (!typedCode) {
+                this.setRedeemMessage('Debes escribir un código.', 'error')
+                return
+            }
+
+            const instance = this.findInstanceByCode(typedCode)
+
+            if (!instance) {
+                this.setRedeemMessage('El código no es válido.', 'error')
+                return
+            }
+
+            if (this.isInstanceRedeemed(instance)) {
+                this.setRedeemMessage(`La instancia "${instance.name}" ya fue canjeada.`, 'success')
+                return
+            }
+
+            this.redeemedInstances.push(String(instance.name))
+            this.redeemedInstances = [...new Set(this.redeemedInstances)]
+
+            await this.saveRedeemedInstances()
+            await this.loadInstances()
+
+            this.setRedeemMessage(`Código correcto. Se desbloqueó "${instance.name}".`, 'success')
+
+            setTimeout(() => {
+                this.closeRedeemModal()
+            }, 700)
+        } catch (err) {
+            console.error('[Instances] Error canjeando código:', err)
+            this.setRedeemMessage('Ocurrió un error al canjear el código.', 'error')
+        }
     }
 
     async loadInstances() {
@@ -336,7 +549,7 @@ class Instances {
 
         await this.clearSelectedInstanceIfNotAllowed()
 
-        this.visibleInstances = this.filterInstancesByWhitelist(this.instances)
+        this.visibleInstances = this.filterInstancesByAccess(this.instances)
 
         console.log('[Instances] Instancias visibles para la cuenta actual =>', this.visibleInstances.map(i => i.name))
 
@@ -397,8 +610,8 @@ class Instances {
         card.setAttribute('data-instance-name', instance?.name || '')
         card.setAttribute('aria-label', `Seleccionar instancia ${instance?.name || 'Instancia'}`)
 
-        const imageHtml = instance?.image
-            ? `<img class="instance-card-image" src="${this.escapeAttribute(instance.image)}" alt="${this.escapeAttribute(instance.name || 'Instancia')}">`
+        const imageHtml = instance?.banner
+            ? `<img class="instance-card-image" src="${this.escapeAttribute(instance.banner)}" alt="${this.escapeAttribute(instance.name || 'Instancia')}">`
             : `<div class="instance-card-image-fallback">🖼️</div>`
 
         const minecraftVersion = this.getMinecraftVersion(instance)
@@ -443,22 +656,35 @@ class Instances {
             if (!instance?.name) return
 
             await this.loadSelectedAccount()
+            await this.loadRedeemedInstances()
 
             if (!this.isInstanceAllowed(instance, this.selectedAccount)) {
                 console.warn('[Instances] Acceso bloqueado a la instancia:', instance.name)
+
+                const isCodeLocked = this.hasCode(instance) && !this.isInstanceRedeemed(instance)
 
                 if (popup && typeof popup === 'function') {
                     const modal = new popup()
                     if (typeof modal.openPopup === 'function') {
                         modal.openPopup({
-                            title: 'Instancia bloqueada',
-                            content: `La instancia <b>${this.escapeHtml(instance.name)}</b> no está disponible para la cuenta seleccionada.`
+                            title: isCodeLocked ? 'Instancia bloqueada por código' : 'Instancia bloqueada',
+                            content: isCodeLocked
+                                ? `La instancia <b>${this.escapeHtml(instance.name)}</b> requiere un código para desbloquearse.`
+                                : `La instancia <b>${this.escapeHtml(instance.name)}</b> no está disponible para la cuenta seleccionada.`
                         })
                     } else {
-                        alert(`La instancia "${instance.name}" no está disponible para la cuenta seleccionada.`)
+                        alert(
+                            isCodeLocked
+                                ? `La instancia "${instance.name}" requiere un código para desbloquearse.`
+                                : `La instancia "${instance.name}" no está disponible para la cuenta seleccionada.`
+                        )
                     }
                 } else {
-                    alert(`La instancia "${instance.name}" no está disponible para la cuenta seleccionada.`)
+                    alert(
+                        isCodeLocked
+                            ? `La instancia "${instance.name}" requiere un código para desbloquearse.`
+                            : `La instancia "${instance.name}" no está disponible para la cuenta seleccionada.`
+                    )
                 }
 
                 return

@@ -1,7 +1,7 @@
 {
     "name": "luxfiro-launcher",
     "productName": "Luxfiro Launcher",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Launcher Oficial de Luxfiro Studio",
     "main": "src/app.js",
     "author": {
@@ -10,21 +10,17 @@
         "url": "https://github.com/Mqrttin"
     },
     "url": "http://free1.empatichost.com:25572/luxfirolauncher",
-
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
         "dev": "cross-env-shell DEV_TOOL=open nodemon --exec npm start",
         "build": "node build.js --obf=true --build=platform",
         "icon": "node build.js --icon=https://raw.githubusercontent.com/luuxis/Selvania-Launcher/master/src/assets/images/icon.png"
     },
-
     "license": "CCANC",
-
     "nodemonConfig": {
         "ext": "js,html,css",
         "ignore": "**/test"
     },
-
     "build": {
         "appId": "com.luxfiro.launcher",
         "productName": "Luxfiro Launcher",
@@ -32,11 +28,11 @@
             "requestedExecutionLevel": "asInvoker"
         }
     },
-
     "dependencies": {
         "azuriom-auth": "^1.0.1",
         "discord-rich-presence": "^0.0.8",
         "electron-updater": "^6.1.8",
+        "extract-zip": "^2.0.1",
         "minecraft-java-core": "^4.2.3",
         "minecraft-server-util": "^5.4.4",
         "node-bdd": "^2.0.4",
@@ -44,7 +40,6 @@
         "three": "^0.183.1",
         "xml-js": "^1.6.11"
     },
-
     "devDependencies": {
         "cross-env": "^7.0.3",
         "electron": "^30.0.9",
@@ -54,7 +49,6 @@
         "nodemon": "^3.1.2",
         "png2icons": "^2.0.1"
     },
-
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Mqrttin/LuxfiroLauncher.git"

@@ -22,10 +22,15 @@ function destroyWindow() {
 
 function createWindow() {
     destroyWindow();
+
     updateWindow = new BrowserWindow({
-        title: "Actualización disponible",
-        width: 400,
-        height: 500,
+        title: "Luxfiro Studio",
+        width: 1280,
+        height: 720,
+        minWidth: 1280,
+        minHeight: 720,
+        maxWidth: 1280,
+        maxHeight: 720,
         resizable: false,
         icon: `./src/assets/images/icon.${os.platform() === "win32" ? "ico" : "png"}`,
         frame: false,
@@ -35,12 +40,19 @@ function createWindow() {
             nodeIntegration: true
         },
     });
+
     Menu.setApplicationMenu(null);
     updateWindow.setMenuBarVisibility(false);
+
     updateWindow.loadFile(path.join(`${app.getAppPath()}/src/index.html`));
+
+    updateWindow.on('closed', () => {
+        updateWindow = undefined;
+    });
+
     updateWindow.once('ready-to-show', () => {
         if (updateWindow) {
-            if (dev) updateWindow.webContents.openDevTools({ mode: 'detach' })
+            if (dev) updateWindow.webContents.openDevTools({ mode: 'detach' });
             updateWindow.show();
         }
     });

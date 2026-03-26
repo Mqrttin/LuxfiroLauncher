@@ -7,12 +7,15 @@ import { config, database, logger, changePanel, appdata, setStatus, pkg, popup, 
 const { Launch, Microsoft } = require('minecraft-java-core')
 const { shell, ipcRenderer } = require('electron')
 
+const nodeFetch = require('node-fetch')
+const fs = require('fs')
+const path = require('path')
+const crypto = require('crypto')
+const extract = require('extract-zip')
+
 class Home {
     static id = "home";
 
-    // =================================================
-    // EDITA ESTO FÁCILMENTE
-    // =================================================
     launcherDisplayName = "Luxfiro Studio";
 
     lockViewportScroll() {
@@ -64,46 +67,46 @@ class Home {
     }
 
     getInstanceType(instanceName = "") {
-        const name = String(instanceName).toLowerCase()
+        const name = String(instanceName).toLowerCase();
 
-        if (name.includes("cobblemon")) return "cobblemon"
-        if (name.includes("pixelmon")) return "pixelmon"
+        if (name.includes("cobblemon")) return "cobblemon";
+        if (name.includes("pixelmon")) return "pixelmon";
 
-        return null
+        return null;
     }
 
     getLoaderLabel(instanceInfo = null) {
-        const loadder = instanceInfo?.loadder
-        if (!loadder) return "Sin loader"
+        const loadder = instanceInfo?.loadder;
+        if (!loadder) return "Sin loader";
 
-        const type = String(loadder.loadder_type || 'none').toLowerCase()
-        const version = loadder.loadder_version ? String(loadder.loadder_version) : ""
+        const type = String(loadder.loadder_type || 'none').toLowerCase();
+        const version = loadder.loadder_version ? String(loadder.loadder_version) : "";
 
-        if (type === 'none') return "Vanilla"
-        if (!version) return type.charAt(0).toUpperCase() + type.slice(1)
+        if (type === 'none') return "Vanilla";
+        if (!version) return type.charAt(0).toUpperCase() + type.slice(1);
 
-        return `${type.charAt(0).toUpperCase() + type.slice(1)} ${version}`
+        return `${type.charAt(0).toUpperCase() + type.slice(1)} ${version}`;
     }
 
     getMinecraftVersion(instanceInfo = null) {
-        return instanceInfo?.loadder?.minecraft_version || "--"
+        return instanceInfo?.loadder?.minecraft_version || "--";
     }
 
     getStudioLabel() {
-        return this.launcherDisplayName || "Launcher Studio"
+        return this.launcherDisplayName || "Launcher Studio";
     }
 
     getInstanceDescription(instanceName = "", instanceInfo = null) {
-        const mcVersion = this.getMinecraftVersion(instanceInfo)
-        const loaderLabel = this.getLoaderLabel(instanceInfo)
+        const mcVersion = this.getMinecraftVersion(instanceInfo);
+        const loaderLabel = this.getLoaderLabel(instanceInfo);
 
-        return `Selecciona <strong>JUGAR</strong> para iniciar <strong>${instanceName || 'esta instancia'}</strong> y abrir la configuración del launcher con <strong>${loaderLabel}</strong> sobre <strong>Minecraft ${mcVersion}</strong>.`
+        return `Selecciona <strong>JUGAR</strong> para iniciar <strong>${instanceName || 'esta instancia'}</strong> y abrir la configuración del launcher con <strong>${loaderLabel}</strong> sobre <strong>Minecraft ${mcVersion}</strong>.`;
     }
 
     updateDiscordRPC(instanceName = "", instanceInfo = null) {
-        const loadder = instanceInfo?.loadder
-        const loaderType = String(loadder?.loadder_type || 'none').toLowerCase()
-        const loaderVersion = loadder?.loadder_version ? String(loadder.loadder_version) : ""
+        const loadder = instanceInfo?.loadder;
+        const loaderType = String(loadder?.loadder_type || 'none').toLowerCase();
+        const loaderVersion = loadder?.loadder_version ? String(loadder.loadder_version) : "";
 
         ipcRenderer.send('update-rpc', {
             instanceName: instanceName || "Minecraft",
@@ -112,7 +115,316 @@ class Home {
                 ? 'Vanilla'
                 : loaderType.charAt(0).toUpperCase() + loaderType.slice(1),
             loaderVersion: loaderType === 'none' ? '' : loaderVersion
-        })
+        });
+    }
+
+    normalizeInstanceRelativePath(input) {
+        return String(input || '')
+            .replace(/\\/g, '/')
+            .replace(/^\/+|\/+$/g, '')
+            .trim();
+    }
+
+    getPackageMetaUrl(instanceUrl, instanceName) {
+        try {
+            const parsed = new URL(instanceUrl);
+            parsed.pathname = '/luxfirolauncher/files/package.php';
+            parsed.search = '';
+            parsed.searchParams.set('instance', instanceName || '');
+            return parsed.toString();
+        } catch (err) {
+            return null;
+        }
+    }
+
+    getLocalInstanceDir(opt) {
+        return path.join(opt.path, 'instances', opt.instance);
+    }
+
+    getPackageCachePaths(opt) {
+        const safeName = String(opt.instance || 'instance')
+            .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+
+        const cacheDir = path.join(opt.path, '.package-cache');
+        const zipPath = path.join(cacheDir, `${safeName}.zip`);
+        const statePath = path.join(cacheDir, `${safeName}.json`);
+        const preserveDir = path.join(cacheDir, `${safeName}-preserve`);
+
+        return { cacheDir, zipPath, statePath, preserveDir };
+    }
+
+    async ensureDir(dirPath) {
+        await fs.promises.mkdir(dirPath, { recursive: true });
+    }
+
+    async fileExists(targetPath) {
+        try {
+            await fs.promises.access(targetPath, fs.constants.F_OK);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    async pathExists(targetPath) {
+        try {
+            await fs.promises.access(targetPath, fs.constants.F_OK);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    async sha1File(filePath) {
+        return await new Promise((resolve, reject) => {
+            const hash = crypto.createHash('sha1');
+            const stream = fs.createReadStream(filePath);
+
+            stream.on('data', chunk => hash.update(chunk));
+            stream.on('error', reject);
+            stream.on('end', () => resolve(hash.digest('hex')));
+        });
+    }
+
+    async readJsonFile(filePath, fallback = null) {
+        try {
+            const raw = await fs.promises.readFile(filePath, 'utf8');
+            return JSON.parse(raw);
+        } catch {
+            return fallback;
+        }
+    }
+
+    async writeJsonFile(filePath, data) {
+        await fs.promises.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+    }
+
+    async copyRecursive(source, destination) {
+        const stats = await fs.promises.stat(source);
+
+        if (stats.isDirectory()) {
+            await this.ensureDir(destination);
+            const entries = await fs.promises.readdir(source);
+
+            for (const entry of entries) {
+                const sourceEntry = path.join(source, entry);
+                const destinationEntry = path.join(destination, entry);
+                await this.copyRecursive(sourceEntry, destinationEntry);
+            }
+
+            return;
+        }
+
+        await this.ensureDir(path.dirname(destination));
+        await fs.promises.copyFile(source, destination);
+    }
+
+    async backupIgnoredEntries(instanceDir, ignoredRules, preserveDir) {
+        const normalizedRules = Array.isArray(ignoredRules)
+            ? ignoredRules
+                .map(rule => this.normalizeInstanceRelativePath(rule))
+                .filter(Boolean)
+            : [];
+
+        await fs.promises.rm(preserveDir, { recursive: true, force: true });
+        await this.ensureDir(preserveDir);
+
+        for (const rule of normalizedRules) {
+            const sourcePath = path.join(instanceDir, ...rule.split('/'));
+            const targetPath = path.join(preserveDir, ...rule.split('/'));
+
+            if (!(await this.pathExists(sourcePath))) {
+                continue;
+            }
+
+            await this.copyRecursive(sourcePath, targetPath);
+        }
+    }
+
+    async restoreIgnoredEntries(instanceDir, ignoredRules, preserveDir) {
+        const normalizedRules = Array.isArray(ignoredRules)
+            ? ignoredRules
+                .map(rule => this.normalizeInstanceRelativePath(rule))
+                .filter(Boolean)
+            : [];
+
+        for (const rule of normalizedRules) {
+            const sourcePath = path.join(preserveDir, ...rule.split('/'));
+            const targetPath = path.join(instanceDir, ...rule.split('/'));
+
+            if (!(await this.pathExists(sourcePath))) {
+                continue;
+            }
+
+            await this.copyRecursive(sourcePath, targetPath);
+        }
+
+        await fs.promises.rm(preserveDir, { recursive: true, force: true });
+    }
+
+    async downloadFile(url, destination, onProgress = null) {
+        const response = await nodeFetch(url, {
+            cache: 'no-store'
+        });
+
+        if (!response.ok || !response.body) {
+            throw new Error(`No se pudo descargar el paquete (${response.status} ${response.statusText})`);
+        }
+
+        await this.ensureDir(path.dirname(destination));
+
+        const total = Number(response.headers.get('content-length')) || 0;
+        let downloaded = 0;
+
+        await new Promise((resolve, reject) => {
+            const fileStream = fs.createWriteStream(destination);
+
+            response.body.on('data', chunk => {
+                downloaded += chunk.length;
+                if (onProgress) onProgress(downloaded, total);
+            });
+
+            response.body.on('error', reject);
+            fileStream.on('error', reject);
+            fileStream.on('finish', resolve);
+
+            response.body.pipe(fileStream);
+        });
+    }
+
+    async syncInstancePackage(options, opt, infoStarting, progressBar) {
+        const metaUrl = this.getPackageMetaUrl(options.url, opt.instance);
+        if (!metaUrl) {
+            throw new Error('No se pudo construir la URL del paquete.');
+        }
+
+        console.log('PACKAGE META URL =>', metaUrl);
+
+        if (infoStarting) {
+            infoStarting.innerHTML = 'Consultando paquete de la instancia...';
+        }
+
+        const metaResponse = await nodeFetch(`${metaUrl}${metaUrl.includes('?') ? '&' : '?'}_=${Date.now()}`, {
+            cache: 'no-store'
+        });
+
+        console.log('PACKAGE META STATUS =>', metaResponse.status);
+
+        if (!metaResponse.ok) {
+            throw new Error(`No se pudo obtener metadata del paquete (${metaResponse.status})`);
+        }
+
+        const meta = await metaResponse.json();
+        console.log('PACKAGE META JSON =>', meta);
+
+        const packageInfo = meta?.package;
+
+        if (!packageInfo?.url || !packageInfo?.hash) {
+            throw new Error('La metadata del paquete es inválida.');
+        }
+
+        const instanceDir = this.getLocalInstanceDir(opt);
+        const { cacheDir, zipPath, statePath, preserveDir } = this.getPackageCachePaths(opt);
+
+        await this.ensureDir(cacheDir);
+        await this.ensureDir(instanceDir);
+
+        const previousState = await this.readJsonFile(statePath, {});
+        const installedHash = previousState?.package_hash || null;
+
+        if (installedHash === packageInfo.hash) {
+            if (infoStarting) {
+                infoStarting.innerHTML = 'Paquete ya actualizado. Verificando archivos...';
+            }
+
+            if (progressBar) {
+                progressBar.style.display = '';
+                progressBar.max = 100;
+                progressBar.value = 100;
+            }
+
+            return false;
+        }
+
+        if (infoStarting) {
+            infoStarting.innerHTML = 'Descargando paquete de la instancia...';
+        }
+
+        if (await this.fileExists(zipPath)) {
+            try {
+                await fs.promises.unlink(zipPath);
+            } catch {}
+        }
+
+        await this.downloadFile(packageInfo.url, zipPath, (downloaded, total) => {
+            const percent = total > 0 ? Math.min(Math.max((downloaded / total) * 100, 0), 100) : 0;
+            const downloadedMB = (downloaded / 1024 / 1024).toFixed(2);
+            const totalMB = total > 0 ? (total / 1024 / 1024).toFixed(2) : '0.00';
+
+            if (infoStarting) {
+                infoStarting.innerHTML = `Descargando paquete ${percent.toFixed(0)}% · ${downloadedMB} MB / ${totalMB} MB`;
+            }
+
+            if (progressBar) {
+                progressBar.style.display = '';
+                progressBar.max = 100;
+                progressBar.value = percent;
+            }
+
+            ipcRenderer.send('main-window-progress', {
+                progress: downloaded,
+                size: total > 0 ? total : 1
+            });
+        });
+
+        if (infoStarting) {
+            infoStarting.innerHTML = 'Verificando paquete descargado...';
+        }
+
+        const zipHash = await this.sha1File(zipPath);
+        if (zipHash !== packageInfo.hash) {
+            throw new Error('El hash del paquete no coincide con el del servidor.');
+        }
+
+        if (infoStarting) {
+            infoStarting.innerHTML = 'Respaldando archivos ignorados...';
+        }
+
+        await this.backupIgnoredEntries(instanceDir, opt.ignored || [], preserveDir);
+
+        if (infoStarting) {
+            infoStarting.innerHTML = 'Extrayendo paquete de la instancia...';
+        }
+
+        await fs.promises.rm(instanceDir, { recursive: true, force: true });
+        await this.ensureDir(instanceDir);
+
+        await extract(zipPath, { dir: instanceDir });
+
+        if (infoStarting) {
+            infoStarting.innerHTML = 'Restaurando archivos ignorados...';
+        }
+
+        await this.restoreIgnoredEntries(instanceDir, opt.ignored || [], preserveDir);
+
+        await this.writeJsonFile(statePath, {
+            instance: opt.instance,
+            package_hash: packageInfo.hash,
+            updated_at: packageInfo.updated_at || null,
+            package_url: packageInfo.url
+        });
+
+        if (infoStarting) {
+            infoStarting.innerHTML = 'Paquete aplicado. Verificando archivos finales...';
+        }
+
+        if (progressBar) {
+            progressBar.style.display = '';
+            progressBar.max = 100;
+            progressBar.value = 100;
+        }
+
+        return true;
     }
 
     async init(config) {
@@ -214,23 +526,23 @@ class Home {
         await this.loadNewsAndTikTok(tipoInstancia);
 
         document.addEventListener('instance:selected', async (e) => {
-            const instance = e.detail?.instance
-            if (!instance) return
+            const instance = e.detail?.instance;
+            if (!instance) return;
 
-            const instanceName = instance.name || ""
+            const instanceName = instance.name || "";
 
             if (instance.status) {
-                setStatus(instance.status)
+                setStatus(instance.status);
             }
 
-            this.updateSelectedInstanceUI(instanceName, instance)
-            this.updateDiscordRPC(instanceName, instance)
+            this.updateSelectedInstanceUI(instanceName, instance);
+            this.updateDiscordRPC(instanceName, instance);
 
-            const instanceType = this.getInstanceType(instanceName)
-            setBackgroundAnimated(undefined, undefined, instanceType)
+            const instanceType = this.getInstanceType(instanceName);
+            setBackgroundAnimated(undefined, undefined, instanceType);
 
-            await this.loadNewsAndTikTok(instanceType || "cobblemon")
-        })
+            await this.loadNewsAndTikTok(instanceType || "cobblemon");
+        });
     }
 
     initNavigation() {
@@ -460,323 +772,362 @@ class Home {
     }
 
     updateSelectedInstanceUI(instanceName = "", instanceInfo = null) {
-        const realName = instanceName || "Minecraft"
-        const version = this.getMinecraftVersion(instanceInfo)
-        const loader = this.getLoaderLabel(instanceInfo)
-        const description = this.getInstanceDescription(realName, instanceInfo)
-        const subtitleText = this.getStudioLabel()
+        const realName = instanceName || "Minecraft";
+        const version = this.getMinecraftVersion(instanceInfo);
+        const loader = this.getLoaderLabel(instanceInfo);
+        const description = this.getInstanceDescription(realName, instanceInfo);
+        const subtitleText = this.getStudioLabel();
 
-        const topbarVersion = document.getElementById('topbar-instance-version')
-        const topbarLoader = document.getElementById('topbar-instance-loader')
+        const topbarVersion = document.getElementById('topbar-instance-version');
+        const topbarLoader = document.getElementById('topbar-instance-loader');
 
-        const heroTitle = document.getElementById('selected-instance-title')
-        const heroSubtitle = document.getElementById('selected-instance-subtitle')
-        const heroVersion = document.getElementById('selected-instance-version')
-        const heroLoader = document.getElementById('selected-instance-loader')
-        const heroDescription = document.getElementById('selected-instance-description')
+        const heroTitle = document.getElementById('selected-instance-title');
+        const heroSubtitle = document.getElementById('selected-instance-subtitle');
+        const heroVersion = document.getElementById('selected-instance-version');
+        const heroLoader = document.getElementById('selected-instance-loader');
+        const heroDescription = document.getElementById('selected-instance-description');
 
-        const compatName = document.querySelector('.server-status-name')
-        const compatText = document.querySelector('.server-status-text')
+        const compatName = document.querySelector('.server-status-name');
+        const compatText = document.querySelector('.server-status-text');
 
-        if (topbarVersion) topbarVersion.textContent = version
-        if (topbarLoader) topbarLoader.textContent = loader
+        if (topbarVersion) topbarVersion.textContent = version;
+        if (topbarLoader) topbarLoader.textContent = loader;
 
-        if (heroTitle) heroTitle.textContent = realName
-        if (heroSubtitle) heroSubtitle.textContent = subtitleText
-        if (heroVersion) heroVersion.textContent = `Versión ${version}`
-        if (heroLoader) heroLoader.textContent = loader
-        if (heroDescription) heroDescription.innerHTML = description
+        if (heroTitle) heroTitle.textContent = realName;
+        if (heroSubtitle) heroSubtitle.textContent = subtitleText;
+        if (heroVersion) heroVersion.textContent = `Versión ${version}`;
+        if (heroLoader) heroLoader.textContent = loader;
+        if (heroDescription) heroDescription.innerHTML = description;
 
-        if (compatName) compatName.textContent = realName
-        if (compatText) compatText.textContent = `${loader} • ${version}`
+        if (compatName) compatName.textContent = realName;
+        if (compatText) compatText.textContent = `${loader} • ${version}`;
     }
 
     async instancesSelect() {
-        let configClient = await this.db.readData('configClient')
-        let instancesList = await config.getInstanceList()
-        let instanceSelect = configClient.instance_selct
+        let configClient = await this.db.readData('configClient');
+        let instancesList = await config.getInstanceList();
+        let instanceSelect = configClient.instance_selct;
 
-        let playBTN = document.querySelector('.play-instance')
+        let playBTN = document.querySelector('.play-instance');
 
         if (instanceSelect) {
-            let instanceType = this.getInstanceType(instanceSelect)
-            let instanceInfo = instancesList.find(i => i.name === instanceSelect)
+            let instanceType = this.getInstanceType(instanceSelect);
+            let instanceInfo = instancesList.find(i => i.name === instanceSelect);
 
             if (instanceInfo) {
-                setStatus(instanceInfo.status)
-                this.updateSelectedInstanceUI(instanceSelect, instanceInfo)
-                this.updateDiscordRPC(instanceSelect, instanceInfo)
+                setStatus(instanceInfo.status);
+                this.updateSelectedInstanceUI(instanceSelect, instanceInfo);
+                this.updateDiscordRPC(instanceSelect, instanceInfo);
             } else {
-                this.updateSelectedInstanceUI(instanceSelect, null)
-                this.updateDiscordRPC(instanceSelect, null)
+                this.updateSelectedInstanceUI(instanceSelect, null);
+                this.updateDiscordRPC(instanceSelect, null);
             }
 
-            setBackgroundAnimated(undefined, undefined, instanceType)
+            setBackgroundAnimated(undefined, undefined, instanceType);
         } else if (instancesList?.length > 0) {
-            const firstInstance = instancesList[0]
-            this.updateSelectedInstanceUI(firstInstance.name, firstInstance)
-            this.updateDiscordRPC(firstInstance.name, firstInstance)
+            const firstInstance = instancesList[0];
+            this.updateSelectedInstanceUI(firstInstance.name, firstInstance);
+            this.updateDiscordRPC(firstInstance.name, firstInstance);
         }
 
         if (playBTN) {
             playBTN.onclick = () => {
-                this.startGame()
-            }
+                this.startGame();
+            };
         }
     }
 
     async startGame() {
-    const fs = require('fs');
-    const path = require('path');
+        let launch = new Launch();
 
-    let launch = new Launch()
+        let configClient = await this.db.readData('configClient');
+        console.log("CONFIG CLIENT =>", configClient);
 
-    let configClient = await this.db.readData('configClient')
-    console.log("CONFIG CLIENT =>", configClient)
+        let instance = await config.getInstanceList();
 
-    let instance = await config.getInstanceList()
+        console.log("ACCOUNT_SELECTED =>", configClient.account_selected);
 
-    console.log("ACCOUNT_SELECTED =>", configClient.account_selected)
+        let authenticator = await this.db.readData('accounts', configClient.account_selected);
+        console.log("AUTH OBJECT =>", authenticator);
 
-    let authenticator = await this.db.readData('accounts', configClient.account_selected)
-    console.log("AUTH OBJECT =>", authenticator)
+        if (authenticator && authenticator.meta?.type === 'Xbox') {
+            console.log("Refrescando sesión Microsoft antes de iniciar...");
 
-    if (authenticator && authenticator.meta?.type === 'Xbox') {
-        console.log("Refrescando sesión Microsoft antes de iniciar...")
+            try {
+                let refreshed = await new Microsoft(this.config.client_id).refresh(authenticator);
 
-        try {
-            let refreshed = await new Microsoft(this.config.client_id).refresh(authenticator)
+                if (refreshed.error) {
+                    throw new Error("Refresh inválido");
+                }
 
-            if (refreshed.error) {
-                throw new Error("Refresh inválido")
+                refreshed.ID = authenticator.ID;
+
+                await this.db.updateData('accounts', refreshed, authenticator.ID);
+
+                authenticator = refreshed;
+
+                console.log("Sesión refrescada correctamente ✅");
+                await this.refreshAccountUI(authenticator);
+
+            } catch (err) {
+                console.log("Error refrescando sesión:", err);
+
+                let pop = new popup();
+                pop.openPopup({
+                    title: 'Sesión expirada',
+                    content: 'Tu sesión expiró. Inicia sesión nuevamente.',
+                    color: 'red',
+                    options: true
+                });
+
+                changePanel('login');
+                return;
             }
+        }
 
-            refreshed.ID = authenticator.ID
-
-            await this.db.updateData('accounts', refreshed, authenticator.ID)
-
-            authenticator = refreshed
-
-            console.log("Sesión refrescada correctamente ✅")
-            await this.refreshAccountUI(authenticator)
-
-        } catch (err) {
-            console.log("Error refrescando sesión:", err)
-
-            let pop = new popup()
+        if (!configClient.account_selected) {
+            let pop = new popup();
             pop.openPopup({
-                title: 'Sesión expirada',
-                content: 'Tu sesión expiró. Inicia sesión nuevamente.',
+                title: 'Cuenta no seleccionada',
+                content: 'Debes iniciar sesión con una cuenta premium para jugar.',
                 color: 'red',
                 options: true
-            })
-
-            changePanel('login')
-            return
+            });
+            changePanel('login');
+            return;
         }
-    }
 
-    if (!configClient.account_selected) {
-        let pop = new popup()
-        pop.openPopup({
-            title: 'Cuenta no seleccionada',
-            content: 'Debes iniciar sesión con una cuenta premium para jugar.',
-            color: 'red',
-            options: true
-        })
-        changePanel('login')
-        return
-    }
-
-    if (!authenticator) {
-        let pop = new popup()
-        pop.openPopup({
-            title: 'Cuenta inválida',
-            content: 'La cuenta seleccionada no existe. Inicia sesión nuevamente.',
-            color: 'red',
-            options: true
-        })
-        changePanel('login')
-        return
-    }
-
-    if (
-        !authenticator.access_token ||
-        !authenticator.client_token ||
-        !authenticator.uuid ||
-        !authenticator.name
-    ) {
-        let pop = new popup()
-        pop.openPopup({
-            title: 'Sesión expirada',
-            content: 'Tu sesión premium expiró. Inicia sesión nuevamente.',
-            color: 'red',
-            options: true
-        })
-        changePanel('login')
-        return
-    }
-
-    if (authenticator.offline === true) {
-        let pop = new popup()
-        pop.openPopup({
-            title: 'Cuenta no premium',
-            content: 'Esta instancia requiere una cuenta premium.',
-            color: 'red',
-            options: true
-        })
-        return
-    }
-
-    let options = instance.find(i => i.name == configClient.instance_selct)
-
-    let playInstanceBTN = document.querySelector('.play-instance')
-    let infoStartingBOX = document.querySelector('.info-starting-game')
-    let infoStarting = document.querySelector(".info-starting-game-text")
-    let progressBar = document.querySelector('.progress-bar')
-
-    let opt = {
-        url: options.url,
-        authenticator: authenticator,
-        timeout: 120000,
-        path: `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`,
-        instance: options.name,
-        version: options.loadder.minecraft_version,
-        detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
-        downloadFileMultiple: configClient.launcher_config.download_multi,
-        intelEnabledMac: configClient.launcher_config.intelEnabledMac,
-
-        loader: {
-            type: options.loadder.loadder_type,
-            build: options.loadder.loadder_version,
-            enable: options.loadder.loadder_type == 'none' ? false : true
-        },
-
-        verify: options.verify,
-        ignored: [...options.ignored],
-        java: {
-            path: configClient.java_config.java_path
-        },
-
-        screen: {
-            width: configClient.game_config.screen_size.width,
-            height: configClient.game_config.screen_size.height
-        },
-
-        memory: {
-            min: `${configClient.java_config.java_memory.min * 1024}M`,
-            max: `${configClient.java_config.java_memory.max * 1024}M`
+        if (!authenticator) {
+            let pop = new popup();
+            pop.openPopup({
+                title: 'Cuenta inválida',
+                content: 'La cuenta seleccionada no existe. Inicia sesión nuevamente.',
+                color: 'red',
+                options: true
+            });
+            changePanel('login');
+            return;
         }
-    }
 
-    ipcRenderer.send('minecraft-launch');
+        if (
+            !authenticator.access_token ||
+            !authenticator.client_token ||
+            !authenticator.uuid ||
+            !authenticator.name
+        ) {
+            let pop = new popup();
+            pop.openPopup({
+                title: 'Sesión expirada',
+                content: 'Tu sesión premium expiró. Inicia sesión nuevamente.',
+                color: 'red',
+                options: true
+            });
+            changePanel('login');
+            return;
+        }
 
-    console.log('INSTANCIA SELECCIONADA =>', options)
-    console.log('JAVA PATH =>', configClient.java_config.java_path)
-    console.log('MC VERSION =>', options?.loadder?.minecraft_version)
-    console.log('LOADER TYPE =>', options?.loadder?.loadder_type)
-    console.log('LOADER VERSION =>', options?.loadder?.loadder_version)
-    console.log('FULL OPT =>', opt)
+        if (authenticator.offline === true) {
+            let pop = new popup();
+            pop.openPopup({
+                title: 'Cuenta no premium',
+                content: 'Esta instancia requiere una cuenta premium.',
+                color: 'red',
+                options: true
+            });
+            return;
+        }
 
-    playInstanceBTN.style.display = "none";
-    infoStartingBOX.style.display = "flex";
-    progressBar.style.display = "";
-    progressBar.value = 0;
-    progressBar.max = 100;
-    infoStarting.innerHTML = `Preparando descarga...`;
+        let options = instance.find(i => i.name == configClient.instance_selct);
 
-    launch.on('progress', (downloaded, total) => {
-        const safeDownloaded = Number(downloaded) || 0;
-        const safeTotal = Number(total) || 0;
+        if (!options) {
+            let pop = new popup();
+            pop.openPopup({
+                title: 'Instancia no encontrada',
+                content: 'No se encontró la instancia seleccionada.',
+                color: 'red',
+                options: true
+            });
+            return;
+        }
 
-        const percent = safeTotal > 0 ? (safeDownloaded / safeTotal) * 100 : 0;
-        const clean = Math.min(Math.max(percent, 0), 100);
+        let playInstanceBTN = document.querySelector('.play-instance');
+        let infoStartingBOX = document.querySelector('.info-starting-game');
+        let infoStarting = document.querySelector(".info-starting-game-text");
+        let progressBar = document.querySelector('.progress-bar');
 
-        const downloadedMB = (safeDownloaded / 1024 / 1024).toFixed(2);
-        const totalMB = safeTotal > 0 ? (safeTotal / 1024 / 1024).toFixed(2) : '0.00';
+        let opt = {
+            url: options.url,
+            authenticator: authenticator,
+            timeout: 120000,
+            path: `${await appdata()}/${process.platform == 'darwin' ? this.config.dataDirectory : `.${this.config.dataDirectory}`}`,
+            instance: options.name,
+            version: options.loadder.minecraft_version,
+            detached: configClient.launcher_config.closeLauncher == "close-all" ? false : true,
+            downloadFileMultiple: configClient.launcher_config.download_multi,
+            intelEnabledMac: configClient.launcher_config.intelEnabledMac,
 
-        infoStarting.innerHTML = `Descargando ${clean.toFixed(0)}% · ${downloadedMB} MB / ${totalMB} MB`;
-        progressBar.value = clean;
+            loader: {
+                type: options.loadder.loadder_type,
+                build: options.loadder.loadder_version,
+                enable: options.loadder.loadder_type == 'none' ? false : true
+            },
 
-        ipcRenderer.send('main-window-progress', {
-            progress: safeDownloaded,
-            size: safeTotal > 0 ? safeTotal : 1
-        });
-    });
+            verify: options.verify,
+            ignored: Array.isArray(options.ignored) ? [...options.ignored] : [],
+            java: {
+                path: configClient.java_config.java_path
+            },
 
-    launch.on('extract', file => {
-        infoStarting.innerHTML = `Verificando ${file}`
-    });
+            screen: {
+                width: configClient.game_config.screen_size.width,
+                height: configClient.game_config.screen_size.height
+            },
 
-    launch.on('patch', () => {
-        ipcRenderer.send('main-window-progress-reset')
-        infoStarting.innerHTML = `Configurando el juego...`
-    });
-
-    launch.on('data', (e) => {
-        progressBar.style.display = "none"
-
-        if (configClient.launcher_config.closeLauncher == 'close-launcher') {
-            ipcRenderer.send("main-window-hide")
+            memory: {
+                min: `${configClient.java_config.java_memory.min * 1024}M`,
+                max: `${configClient.java_config.java_memory.max * 1024}M`
+            }
         };
 
-        new logger('Minecraft', '#36b030');
+        ipcRenderer.send('minecraft-launch');
 
-        ipcRenderer.send('main-window-progress-reset')
-        infoStarting.innerHTML = `Ejecutando...`
+        console.log('INSTANCIA SELECCIONADA =>', options);
+        console.log('JAVA PATH =>', configClient.java_config.java_path);
+        console.log('MC VERSION =>', options?.loadder?.minecraft_version);
+        console.log('LOADER TYPE =>', options?.loadder?.loadder_type);
+        console.log('LOADER VERSION =>', options?.loadder?.loadder_version);
+        console.log('FULL OPT =>', opt);
 
-        console.log(e);
-    })
+        if (playInstanceBTN) playInstanceBTN.style.display = "none";
+        if (infoStartingBOX) infoStartingBOX.style.display = "flex";
+        if (progressBar) {
+            progressBar.style.display = "";
+            progressBar.value = 0;
+            progressBar.max = 100;
+        }
+        if (infoStarting) infoStarting.innerHTML = `Preparando descarga...`;
 
-    launch.on('debug', (e) => {
-        console.log('[DEBUG]', e)
-    })
+        try {
+            await this.syncInstancePackage(options, opt, infoStarting, progressBar);
+        } catch (packageError) {
+            console.error('Package sync fallback =>', packageError);
+            console.error('Package sync fallback message =>', packageError?.message);
 
-    launch.on('close', () => {
-        ipcRenderer.send('force-exit');
-    });
+            if (infoStarting) {
+                infoStarting.innerHTML = 'El paquete falló. Usando descarga clásica...';
+            }
 
-    launch.on('error', err => {
-        console.error('Launch error raw =>', err)
-        console.error('Instancia actual =>', options)
-        console.error('Launch opt =>', opt)
-
-        const message =
-            err?.error ||
-            err?.message ||
-            err?.stack ||
-            (typeof err === 'string' ? err : null) ||
-            'La instancia no pudo iniciarse. Revisa Forge, Java y la configuración de la instancia.'
-
-        let popupError = new popup()
-        popupError.openPopup({
-            title: 'Error',
-            content: message,
-            color: 'red',
-            options: true
-        })
-
-        if (configClient.launcher_config.closeLauncher == 'close-launcher') {
-            ipcRenderer.send("main-window-show")
+            if (progressBar) {
+                progressBar.style.display = '';
+                progressBar.value = 0;
+                progressBar.max = 100;
+            }
         }
 
-        ipcRenderer.send('main-window-progress-reset')
+        launch.on('progress', (downloaded, total) => {
+            const safeDownloaded = Number(downloaded) || 0;
+            const safeTotal = Number(total) || 0;
 
-        infoStartingBOX.style.display = "none"
-        playInstanceBTN.style.display = "flex"
-        progressBar.value = 0
+            const percent = safeTotal > 0 ? (safeDownloaded / safeTotal) * 100 : 0;
+            const clean = Math.min(Math.max(percent, 0), 100);
 
-        infoStarting.innerHTML = `Verificación`
+            const downloadedMB = (safeDownloaded / 1024 / 1024).toFixed(2);
+            const totalMB = safeTotal > 0 ? (safeTotal / 1024 / 1024).toFixed(2) : '0.00';
 
-        new logger(pkg.name, '#7289da')
-    })
+            if (infoStarting) {
+                infoStarting.innerHTML = `Descargando ${clean.toFixed(0)}% · ${downloadedMB} MB / ${totalMB} MB`;
+            }
 
-    try {
-        launch.Launch(opt);
-    } catch (err) {
-        console.error('Launch throw =>', err);
+            if (progressBar) {
+                progressBar.value = clean;
+            }
+
+            ipcRenderer.send('main-window-progress', {
+                progress: safeDownloaded,
+                size: safeTotal > 0 ? safeTotal : 1
+            });
+        });
+
+        launch.on('extract', file => {
+            if (infoStarting) {
+                infoStarting.innerHTML = `Verificando ${file}`;
+            }
+        });
+
+        launch.on('patch', () => {
+            ipcRenderer.send('main-window-progress-reset');
+            if (infoStarting) {
+                infoStarting.innerHTML = `Configurando el juego...`;
+            }
+        });
+
+        launch.on('data', (e) => {
+            if (progressBar) {
+                progressBar.style.display = "none";
+            }
+
+            if (configClient.launcher_config.closeLauncher == 'close-launcher') {
+                ipcRenderer.send("main-window-hide");
+            }
+
+            new logger('Minecraft', '#36b030');
+
+            ipcRenderer.send('main-window-progress-reset');
+            if (infoStarting) {
+                infoStarting.innerHTML = `Ejecutando...`;
+            }
+
+            console.log(e);
+        });
+
+        launch.on('debug', (e) => {
+            console.log('[DEBUG]', e);
+        });
+
+        launch.on('close', () => {
+            ipcRenderer.send('force-exit');
+        });
+
+        launch.on('error', err => {
+            console.error('Launch error raw =>', err);
+            console.error('Instancia actual =>', options);
+            console.error('Launch opt =>', opt);
+
+            const message =
+                err?.error ||
+                err?.message ||
+                err?.stack ||
+                (typeof err === 'string' ? err : null) ||
+                'La instancia no pudo iniciarse. Revisa Forge, Java y la configuración de la instancia.';
+
+            let popupError = new popup();
+            popupError.openPopup({
+                title: 'Error',
+                content: message,
+                color: 'red',
+                options: true
+            });
+
+            if (configClient.launcher_config.closeLauncher == 'close-launcher') {
+                ipcRenderer.send("main-window-show");
+            }
+
+            ipcRenderer.send('main-window-progress-reset');
+
+            if (infoStartingBOX) infoStartingBOX.style.display = "none";
+            if (playInstanceBTN) playInstanceBTN.style.display = "flex";
+            if (progressBar) progressBar.value = 0;
+            if (infoStarting) infoStarting.innerHTML = `Verificación`;
+
+            new logger(pkg.name, '#7289da');
+        });
+
+        try {
+            launch.Launch(opt);
+        } catch (err) {
+            console.error('Launch throw =>', err);
+        }
     }
-}
 
     async loadNewsAndTikTok(instanceType = "cobblemon") {
         try {
@@ -788,12 +1139,12 @@ class Home {
     }
 
     getdate(e) {
-        let date = new Date(e)
-        let year = date.getFullYear()
-        let month = date.getMonth() + 1
-        let day = date.getDate()
-        let allMonth = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-        return { year: year, month: allMonth[month - 1], day: day }
+        let date = new Date(e);
+        let year = date.getFullYear();
+        let month = date.getMonth() + 1;
+        let day = date.getDate();
+        let allMonth = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        return { year: year, month: allMonth[month - 1], day: day };
     }
 
     async updatePlayerHead(account) {
