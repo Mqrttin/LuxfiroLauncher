@@ -1,5 +1,5 @@
 /**
- * @author ImNotRuso-Mqrttin
+ * @author Luuxis
  * @license CC-BY-NC 4.0 - https://creativecommons.org/licenses/by-nc/4.0
  */
 
@@ -72,18 +72,6 @@ class Splash {
 
             const splashElement = document.querySelector("#splash");
             if (splashElement) splashElement.style.display = "block";
-
-            await sleep(500);
-
-            if (this.splash) this.splash.classList.add("opacity");
-
-            await sleep(500);
-
-            if (this.splash) this.splash.classList.add("translate");
-            if (this.splashMessage) this.splashMessage.classList.add("opacity");
-            if (this.splashAuthor) this.splashAuthor.classList.add("opacity");
-
-            await sleep(1000);
 
             this.checkUpdate();
         } catch (error) {

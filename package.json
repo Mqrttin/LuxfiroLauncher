@@ -1,7 +1,7 @@
 {
     "name": "luxfiro-launcher",
     "productName": "Luxfiro Launcher",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "Launcher Oficial de Luxfiro Studio",
     "main": "src/app.js",
     "author": {
@@ -9,7 +9,7 @@
         "email": "contacto.imnortuso@gmail.com",
         "url": "https://github.com/Mqrttin"
     },
-    "url": "http://free1.empatichost.com:25572/luxfirolauncher",
+    "url": "http://172.96.172.240:25654/luxfirolauncher",
     "scripts": {
         "start": "cross-env-shell NODE_ENV=dev electron .",
         "dev": "cross-env-shell DEV_TOOL=open nodemon --exec npm start",

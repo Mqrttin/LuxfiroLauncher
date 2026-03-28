@@ -114,14 +114,6 @@ body {
         transform 0.8s ease;
 }
 
-.splash.opacity {
-    opacity: 0;
-}
-
-.splash.translate {
-    transform: translateY(-14px) scale(0.99);
-}
-
 .splash-brand {
     display: flex;
     align-items: center;
@@ -157,11 +149,6 @@ body {
         0 0 60px rgba(120, 220, 255, 0.2);
 }
 
-.splash-message.opacity {
-    opacity: 0;
-    transform: translateY(-6px);
-}
-
 .splash-subtitle {
     font-size: 42px;
     letter-spacing: 0.45em;
@@ -172,10 +159,6 @@ body {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.4s ease;
-}
-
-.splash-author.opacity {
-    opacity: 0;
 }
 
 .splash-status {
